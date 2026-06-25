@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "market-price",
+  "name": "Market Price",
+  "emoji": "🛒",
+  "description": "Guess the Naija market price.",
+  "version": "1.0.0.0",
+  "minPlayers": 1,
+  "maxPlayers": 12,
+  "capabilities": {
+    "bots": false,
+    "audience": true,
+    "hints": false,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}

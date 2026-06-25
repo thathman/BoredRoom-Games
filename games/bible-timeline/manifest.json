@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "bible-timeline",
+  "name": "Bible Timeline Rush",
+  "emoji": "📜",
+  "description": "Put the events in order, fast.",
+  "version": "1.0.0.0",
+  "minPlayers": 1,
+  "maxPlayers": 12,
+  "capabilities": {
+    "bots": false,
+    "audience": true,
+    "hints": true,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}

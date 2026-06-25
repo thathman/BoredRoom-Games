@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ettt",
+  "name": "Endless Tic Tac Toe",
+  "emoji": "✕",
+  "description": "Rolling three-piece team memory.",
+  "version": "1.0.0.0",
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "capabilities": {
+    "bots": false,
+    "audience": true,
+    "hints": false,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}

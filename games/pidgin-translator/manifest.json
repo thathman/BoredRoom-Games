@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "pidgin-translator",
+  "name": "Pidgin Translator",
+  "emoji": "🗣️",
+  "description": "Translate between English and Pidgin.",
+  "version": "1.0.0.0",
+  "minPlayers": 1,
+  "maxPlayers": 12,
+  "capabilities": {
+    "bots": false,
+    "audience": true,
+    "hints": false,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}

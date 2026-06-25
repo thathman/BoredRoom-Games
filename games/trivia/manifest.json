@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "trivia",
+  "name": "Who Sabi Pass?",
+  "emoji": "🇳🇬",
+  "description": "Naija culture, history, music and film trivia.",
+  "version": "1.0.0.0",
+  "minPlayers": 2,
+  "maxPlayers": 8,
+  "capabilities": {
+    "bots": false,
+    "audience": true,
+    "hints": true,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}

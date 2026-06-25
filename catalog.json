@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-25T17:24:23.628Z",
+  "repository": "https://github.com/thathman/BoredRoom-Games",
+  "games": [
+    {
+      "schemaVersion": 1,
+      "id": "bible-timeline",
+      "name": "Bible Timeline Rush",
+      "emoji": "📜",
+      "description": "Put the events in order, fast.",
+      "version": "1.0.0.0",
+      "minPlayers": 1,
+      "maxPlayers": 12,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": true,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/bible-timeline-1.0.0.0.tgz",
+        "sha256": "bc597fe0512d820cced20146352ca903690249ce255981e0a0d817f78b7a9b06",
+        "signature": "RD7oQSUURCv0DaxqfA1K4/3y0UXYQcQvmkP7s35vxfBco14+6GFXjAkGIN7/U4DStuYAQ8lwTVhOp9uebeMaCw==",
+        "size": 5261
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "color-wahala",
+      "name": "Color Wahala",
+      "emoji": "🎨",
+      "description": "Read the word, ignore the ink.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 8,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/color-wahala-1.0.0.0.tgz",
+        "sha256": "dd6defbc41dc53783bed9be5c775d198d31c99189c5b3b96d712d508f45bd928",
+        "signature": "HCWd0Q8xb42tT6elOhicjeE3MnFvCcM323wQpzx+xHbwVVw4XBG50fbdNiFzac7C1ld4uG14eZRxrBtICro1AQ==",
+        "size": 16378
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "connect-4",
+      "name": "Connect 4",
+      "emoji": "🔴",
+      "description": "Tag-team connect-four showdown.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/connect-4-1.0.0.0.tgz",
+        "sha256": "77790d933834b550043e4ada6380f99653664520b46b70d7f00b45a19b48a1c2",
+        "signature": "HdTtehrRoj4DlaH0KHxkUCoQuSiaUPYdYkd0g1woORsWJkWXW8b/dcYGU64+ed4/gdqxArKIw6z+rfmyMCpdCA==",
+        "size": 12235
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "ettt",
+      "name": "Endless Tic Tac Toe",
+      "emoji": "✕",
+      "description": "Rolling three-piece team memory.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/ettt-1.0.0.0.tgz",
+        "sha256": "fc81b6e16a2ae7ca04f6b80edaeb4d74f35bb186e4f374ce068757d1f1522995",
+        "signature": "ORjqVPUNTjBIVlwGcLWYWrD1nwQGqMdOylRZwcFcS8602cDeosfnsK5bKPkbJINaPUgPpDjNZNoDg2CZrfA1Dw==",
+        "size": 11992
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "faith-feud",
+      "name": "Faith Feud",
+      "emoji": "⛪",
+      "description": "Survey says—guess the top answers.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 12,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/faith-feud-1.0.0.0.tgz",
+        "sha256": "e24c86894d27bb9536f63206ea846b16bb85e52c1cfcda00967869d45dc54619",
+        "signature": "iaT90QF0ZZRQBLDCTXsomLWYR9eyr2/yWzuNDAosAayMsiDpSnXLeGEJ2pfBBEDp0qfb2sK3zkdFtwPpTBNaAw==",
+        "size": 5391
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "half-half",
+      "name": "Half & Half",
+      "emoji": "✂️",
+      "description": "Find the perfect midpoint.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 8,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/half-half-1.0.0.0.tgz",
+        "sha256": "ccceea8c897159ad15d41ca81d4c1218708eb4573b7985c36667238a54b27e37",
+        "signature": "M7JRpMA9YMqWS6VJyY6t+dd3ROhYF1miVLr4tdu+1RG6fbMhl0djWiwWff9SXLAxEMKA/cvt8KB+4Y/+bSR7DQ==",
+        "size": 14861
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "hustle",
+      "name": "Hustle",
+      "emoji": "🪜",
+      "description": "Climb come-ups and dodge wahala.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/hustle-1.0.0.0.tgz",
+        "sha256": "1a048e595e13c6523c9bd4bd12a87c9c84d7b483333fc8dc7dcda41a0e784b7e",
+        "signature": "NN9YN31zJq8kutT14wrc5G8k07s4U6jcXs7ptPmjDCwiqoF0YN4b1yzAUbBjWWNLGlD3Abl/ErSoUiboqFPZDQ==",
+        "size": 20830
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "landlord",
+      "name": "Oga Landlord",
+      "emoji": "🏘️",
+      "description": "Roll, buy and collect rent across Nigeria.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/landlord-1.0.0.0.tgz",
+        "sha256": "baa86bb625ac6f96cdb129c0de2b7ba9677986e20e29a3865b3de41fcd9a2549",
+        "signature": "6On/59kFRg2bmlTAxLXoYGthg6MDzCukC4y4RBygvk4Tm7QCbb/bkntJOzDq/pKQ7X71ITpew2GCwtYyziRTCg==",
+        "size": 28579
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "logo",
+      "name": "Logo Guesser",
+      "emoji": "🔎",
+      "description": "Identify the brand before time expires.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 8,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": true,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/logo-1.0.0.0.tgz",
+        "sha256": "c58f37da1c92f3303e2298fbd1f5810e1aaf6d178dc865c838c0e10a47d2640a",
+        "signature": "cTusVsPUWSjAN9Igi2uG+r9eQlMBy3K/wr+FjJPYldoW78iYgg2GM3gewmCCaV2GEmiRJjK/hYugcim15OuyAA==",
+        "size": 19629
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "ludo",
+      "name": "Ludo",
+      "emoji": "🎲",
+      "description": "The classic race home.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "capabilities": {
+        "bots": true,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/ludo-1.0.0.0.tgz",
+        "sha256": "7a8e8a63936d7e35aa337bcbb6b1680593d476f3bfc66612b7c7afa97c5900ff",
+        "signature": "Ec4/zsXd3eOcOzn8yXT30Q22c8vZwPgXRWJ9I089szsIyKB4rer75AbP/T08o2mkDXboyHAL0j+/3pcgJZByDw==",
+        "size": 7803
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "market-price",
+      "name": "Market Price",
+      "emoji": "🛒",
+      "description": "Guess the Naija market price.",
+      "version": "1.0.0.0",
+      "minPlayers": 1,
+      "maxPlayers": 12,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/market-price-1.0.0.0.tgz",
+        "sha256": "27001579e6d30dfa9e79113f1c6d377e98f47b8466ad16bf2090d996cbb81ec4",
+        "signature": "vykvD1ouAmduZj8Og93jVipW8A8QxpxUfifuQB4l7wJPZqW4Vqgz0A4W6SouIOe2Y1fowj7/65FVK/kQnjY3Ag==",
+        "size": 5360
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "pidgin-translator",
+      "name": "Pidgin Translator",
+      "emoji": "🗣️",
+      "description": "Translate between English and Pidgin.",
+      "version": "1.0.0.0",
+      "minPlayers": 1,
+      "maxPlayers": 12,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/pidgin-translator-1.0.0.0.tgz",
+        "sha256": "c60a126a84e734f01cad99489308416e5430b390048b8e6e905f7277870fb743",
+        "signature": "LOKbCcE/NRCbE0qOxHNdJn4Asu/9qBE+1ai/VNC/va3/OmgCjx1cb/xO/Sf4HMem6xtC7Mr8akEAQaGGuOdsCg==",
+        "size": 5149
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "trivia",
+      "name": "Who Sabi Pass?",
+      "emoji": "🇳🇬",
+      "description": "Naija culture, history, music and film trivia.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 8,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": true,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/trivia-1.0.0.0.tgz",
+        "sha256": "07244ba865926274d70998776962170c1d5c6389060c088360f66c2779b4bf3a",
+        "signature": "BzIu0IO7P0Jd4ofWlKjDZRxCooaP4hyra06XukYGwvil26AqoAr2Kj4aojk4/QrpPwPBcfKojldQ4NhNLtE1CA==",
+        "size": 30698
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "whot",
+      "name": "Whot",
+      "emoji": "🃏",
+      "description": "Nigerian shape-and-number showdown.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 8,
+      "capabilities": {
+        "bots": true,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/whot-1.0.0.0.tgz",
+        "sha256": "7446bed1021a4a222881626b298902fc88126c2df1e7afdf9e30458f89fe5722",
+        "signature": "O7hzjNgkzB0jkg7C3x2nGXV5bSAz+rmyiLrOjg1xrsplzW7MNVUwOxdVcHSN74c953i/Qb9S4GRmY+aqmU+UBw==",
+        "size": 20528
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "word-wahala",
+      "name": "Word Wahala",
+      "emoji": "🔤",
+      "description": "Naija word-board showdown.",
+      "version": "1.0.0.0",
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "capabilities": {
+        "bots": false,
+        "audience": true,
+        "hints": false,
+        "restore": true
+      },
+      "entrypoints": {
+        "server": "source/server.js",
+        "display": "source/display.js",
+        "controller": "source/controller.js",
+        "companion": "source/companion.js"
+      },
+      "artifact": {
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/word-wahala-1.0.0.0.tgz",
+        "sha256": "166449eebfc74df1c4189b840364858b175b0ee45124a8aee038ac780c4d4103",
+        "signature": "fACS+E9t9d3Zfg/lTjJHhOkXHsO2P9DZRl3/T6GJgYFVUQrhSEVF3zZSEZql//ZDlXCxHMAf1UDaziLyoPb3DA==",
+        "size": 28837
+      }
+    }
+  ]
+}

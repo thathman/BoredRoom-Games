@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "whot",
+  "name": "Whot",
+  "emoji": "🃏",
+  "description": "Nigerian shape-and-number showdown.",
+  "version": "1.0.0.0",
+  "minPlayers": 2,
+  "maxPlayers": 8,
+  "capabilities": {
+    "bots": true,
+    "audience": true,
+    "hints": false,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ludo",
+  "name": "Ludo",
+  "emoji": "🎲",
+  "description": "The classic race home.",
+  "version": "1.0.0.0",
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "capabilities": {
+    "bots": true,
+    "audience": true,
+    "hints": false,
+    "restore": true
+  },
+  "entrypoints": {
+    "server": "source/server.js",
+    "display": "source/display.js",
+    "controller": "source/controller.js",
+    "companion": "source/companion.js"
+  }
+}
