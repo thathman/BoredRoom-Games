@@ -1,12 +1,13 @@
 import { createHash, createPrivateKey, sign } from 'node:crypto';
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const gamesRoot = path.join(root, 'games');
 const dist = path.join(root, 'dist');
-const tag = process.env.RELEASE_TAG ?? 'v1.0.0.0';
+const tag = process.env.RELEASE_TAG ?? 'v1.1.0.0';
+const releaseVersion = tag.replace(/^v/, '');
 const privateKeyText = process.env.BOREDROOM_GAMES_SIGNING_KEY;
 if (!privateKeyText) throw new Error('BOREDROOM_GAMES_SIGNING_KEY is required');
 const privateKey = createPrivateKey(privateKeyText);
@@ -17,18 +18,45 @@ await mkdir(dist, { recursive: true });
 const entries = [];
 for (const id of (await readdir(gamesRoot)).sort()) {
   const gameDir = path.join(gamesRoot, id);
-  const manifest = JSON.parse(await readFile(path.join(gameDir, 'manifest.json'), 'utf8'));
+  const sourceManifest = JSON.parse(await readFile(path.join(gameDir, 'manifest.json'), 'utf8'));
+  const manifest = {
+    ...sourceManifest,
+    version: releaseVersion,
+    ai: {
+      commentary: true,
+      hints: sourceManifest.capabilities.hints,
+      rules: true,
+      recommendations: true,
+      recaps: true,
+      moderation: false,
+      deterministicBots: sourceManifest.capabilities.bots,
+    },
+    rules: {
+      summary: `${sourceManifest.name} validates every player action on the server and exposes legal actions without revealing private state.`,
+      intents: ['answer', 'guess', 'answer_text', 'submit_order', 'advance'],
+    },
+  };
   const artifactName = `${id}-${manifest.version}.tgz`;
   const artifactPath = path.join(dist, artifactName);
+  const staging = path.join(dist, `.stage-${id}`);
+  await mkdir(path.join(staging, 'source'), { recursive: true });
+  await cp(path.join(gameDir, 'source'), path.join(staging, 'source'), { recursive: true });
+  await cp(path.join(root, 'runtime', 'game-runtime.js'), path.join(staging, 'source', 'runtime.js'));
+  await writeFile(path.join(staging, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFile(
+    path.join(staging, 'source', 'server.js'),
+    `import { createPlugin } from './runtime.js';\nconst manifest = ${JSON.stringify(manifest)};\nexport const gamePlugin = createPlugin(manifest);\nexport default gamePlugin;\n`,
+  );
   const reproducibleFlags = process.platform === 'linux'
     ? ['--sort=name', '--mtime=@0', '--owner=0', '--group=0', '--numeric-owner']
     : [];
   const packed = spawnSync('tar', [
-    ...reproducibleFlags, '-czf', artifactPath, '-C', gameDir, 'manifest.json', 'source',
+    ...reproducibleFlags, '-czf', artifactPath, '-C', staging, 'manifest.json', 'source',
   ], {
     stdio: 'inherit',
   });
   if (packed.status !== 0) throw new Error(`Could not package ${id}`);
+  await rm(staging, { recursive: true, force: true });
   const bytes = await readFile(artifactPath);
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   const signature = sign(null, Buffer.from(sha256, 'utf8'), privateKey).toString('base64');

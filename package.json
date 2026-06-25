@@ -1,10 +1,10 @@
 {
   "name": "boredroom-games",
   "private": true,
-  "version": "1.0.0.0",
+  "version": "1.1.0.0",
   "type": "module",
   "scripts": {
     "build": "node scripts/build-catalog.mjs",
-    "test": "node --test scripts/catalog.test.mjs"
+    "test": "node --test scripts/*.test.mjs"
   }
 }

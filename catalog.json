@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-25T17:24:23.628Z",
+  "generatedAt": "2026-06-25T20:36:48.418Z",
   "repository": "https://github.com/thathman/BoredRoom-Games",
   "games": [
     {
@@ -9,7 +9,7 @@
       "name": "Bible Timeline Rush",
       "emoji": "📜",
       "description": "Put the events in order, fast.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 1,
       "maxPlayers": 12,
       "capabilities": {
@@ -24,11 +24,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": true,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Bible Timeline Rush validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/bible-timeline-1.0.0.0.tgz",
-        "sha256": "bc597fe0512d820cced20146352ca903690249ce255981e0a0d817f78b7a9b06",
-        "signature": "RD7oQSUURCv0DaxqfA1K4/3y0UXYQcQvmkP7s35vxfBco14+6GFXjAkGIN7/U4DStuYAQ8lwTVhOp9uebeMaCw==",
-        "size": 5261
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/bible-timeline-1.1.0.0.tgz",
+        "sha256": "6d7e9681a6fc3dff6106311a918bc95d2b74d7c3cc277918e125b9579198fd4c",
+        "signature": "xKdnbbSDzq4Vx9hwvjsL9PKbp/Hh7OhclwIfL3Pzf53a3/SLZSE9rJM0lXtfKuleDwOl74nPiFcB7MJO8dICDQ==",
+        "size": 9723
       }
     },
     {
@@ -37,7 +56,7 @@
       "name": "Color Wahala",
       "emoji": "🎨",
       "description": "Read the word, ignore the ink.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -52,11 +71,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Color Wahala validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/color-wahala-1.0.0.0.tgz",
-        "sha256": "dd6defbc41dc53783bed9be5c775d198d31c99189c5b3b96d712d508f45bd928",
-        "signature": "HCWd0Q8xb42tT6elOhicjeE3MnFvCcM323wQpzx+xHbwVVw4XBG50fbdNiFzac7C1ld4uG14eZRxrBtICro1AQ==",
-        "size": 16378
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/color-wahala-1.1.0.0.tgz",
+        "sha256": "af4f398872801adc26edaf5876945103dd67b9d012d417c16bb76b48f77ff255",
+        "signature": "CQjpqYVvFRT35uTaiFI57YLa5hmG5XsqLbKPhPPE/7d5yYerGgrjwfB1hNtkrIjsCsCxmmV/AZqb3zcxQn2mDg==",
+        "size": 20805
       }
     },
     {
@@ -65,7 +103,7 @@
       "name": "Connect 4",
       "emoji": "🔴",
       "description": "Tag-team connect-four showdown.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -80,11 +118,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Connect 4 validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/connect-4-1.0.0.0.tgz",
-        "sha256": "77790d933834b550043e4ada6380f99653664520b46b70d7f00b45a19b48a1c2",
-        "signature": "HdTtehrRoj4DlaH0KHxkUCoQuSiaUPYdYkd0g1woORsWJkWXW8b/dcYGU64+ed4/gdqxArKIw6z+rfmyMCpdCA==",
-        "size": 12235
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/connect-4-1.1.0.0.tgz",
+        "sha256": "3e659dab9074da2778bdd4f9b6bc7569388548b127ddd91e8cd2f9b26180b6bd",
+        "signature": "o478XY44kBCTcrqHfiS8B2edossE43laAeg3JiDezpvE6PJS8jq36EcLEoUgop9nR/40uwdfANiOhWEfR0UUCw==",
+        "size": 16842
       }
     },
     {
@@ -93,7 +150,7 @@
       "name": "Endless Tic Tac Toe",
       "emoji": "✕",
       "description": "Rolling three-piece team memory.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -108,11 +165,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Endless Tic Tac Toe validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/ettt-1.0.0.0.tgz",
-        "sha256": "fc81b6e16a2ae7ca04f6b80edaeb4d74f35bb186e4f374ce068757d1f1522995",
-        "signature": "ORjqVPUNTjBIVlwGcLWYWrD1nwQGqMdOylRZwcFcS8602cDeosfnsK5bKPkbJINaPUgPpDjNZNoDg2CZrfA1Dw==",
-        "size": 11992
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/ettt-1.1.0.0.tgz",
+        "sha256": "492f47adc0aaa4f51621988f5e70b008f2cd004c89247f925d01f81a2c9149d9",
+        "signature": "pDiOoO6PiH/1htP5zWCkDLUjZlc7ALeqUv/CtS8zTjzuR26D3ViobmPwcG3CfACRg0J0fTy5cdfMQspntzD2DA==",
+        "size": 16450
       }
     },
     {
@@ -121,7 +197,7 @@
       "name": "Faith Feud",
       "emoji": "⛪",
       "description": "Survey says—guess the top answers.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 12,
       "capabilities": {
@@ -136,11 +212,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Faith Feud validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/faith-feud-1.0.0.0.tgz",
-        "sha256": "e24c86894d27bb9536f63206ea846b16bb85e52c1cfcda00967869d45dc54619",
-        "signature": "iaT90QF0ZZRQBLDCTXsomLWYR9eyr2/yWzuNDAosAayMsiDpSnXLeGEJ2pfBBEDp0qfb2sK3zkdFtwPpTBNaAw==",
-        "size": 5391
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/faith-feud-1.1.0.0.tgz",
+        "sha256": "6156633b2df7ffc6754666216d4f468dde71d9050564cdafe9869385e9a77196",
+        "signature": "1MKcbJLwXG4xxNYeGfO3vdCYplWGZ3A3VatKgH0tPvAlo0XEhhacu3epqYeQZQfBu4UWZeuStNTZcD6e3th1BA==",
+        "size": 9864
       }
     },
     {
@@ -149,7 +244,7 @@
       "name": "Half & Half",
       "emoji": "✂️",
       "description": "Find the perfect midpoint.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -164,11 +259,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Half & Half validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/half-half-1.0.0.0.tgz",
-        "sha256": "ccceea8c897159ad15d41ca81d4c1218708eb4573b7985c36667238a54b27e37",
-        "signature": "M7JRpMA9YMqWS6VJyY6t+dd3ROhYF1miVLr4tdu+1RG6fbMhl0djWiwWff9SXLAxEMKA/cvt8KB+4Y/+bSR7DQ==",
-        "size": 14861
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/half-half-1.1.0.0.tgz",
+        "sha256": "effb858239bcb630d5e1a8fb96c015bc45ba660355914987a927a9d8da4ee36a",
+        "signature": "QjpdxPEtIq4QuipDkTmJic4kTgEVsNIuYc9bnfCu/lTV8pwv9ALXamncUKQIXQOiCVr+gLwJ5UzBprENXOlrDg==",
+        "size": 19478
       }
     },
     {
@@ -177,7 +291,7 @@
       "name": "Hustle",
       "emoji": "🪜",
       "description": "Climb come-ups and dodge wahala.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -192,11 +306,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Hustle validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/hustle-1.0.0.0.tgz",
-        "sha256": "1a048e595e13c6523c9bd4bd12a87c9c84d7b483333fc8dc7dcda41a0e784b7e",
-        "signature": "NN9YN31zJq8kutT14wrc5G8k07s4U6jcXs7ptPmjDCwiqoF0YN4b1yzAUbBjWWNLGlD3Abl/ErSoUiboqFPZDQ==",
-        "size": 20830
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/hustle-1.1.0.0.tgz",
+        "sha256": "d80ac2fbfc2932a34302d1eea008fc8b76201e847045fbcc85e7a4b528c3c9d0",
+        "signature": "GS76QP0Dkg7IpVThTcEjyXiWXuAaCEvlRgjI8wN5WSqvXGhmMlE5e4yNE274wuGTwY/AUv8jFCeU/EXpRw96Bg==",
+        "size": 25292
       }
     },
     {
@@ -205,7 +338,7 @@
       "name": "Oga Landlord",
       "emoji": "🏘️",
       "description": "Roll, buy and collect rent across Nigeria.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -220,11 +353,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Oga Landlord validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/landlord-1.0.0.0.tgz",
-        "sha256": "baa86bb625ac6f96cdb129c0de2b7ba9677986e20e29a3865b3de41fcd9a2549",
-        "signature": "6On/59kFRg2bmlTAxLXoYGthg6MDzCukC4y4RBygvk4Tm7QCbb/bkntJOzDq/pKQ7X71ITpew2GCwtYyziRTCg==",
-        "size": 28579
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/landlord-1.1.0.0.tgz",
+        "sha256": "e7cb7d5c25cc41b6b16f08a36846835a8f338af34a9414cd6a74a601dc79d3dc",
+        "signature": "b82XQ6oDWdo+QWbwMNMBc2mP8n7dxS6oAX6IbcGc5VXkvzzI6kLzFfAsjxl8gXNMTyhI48q8dNOfgdgY1H+XAw==",
+        "size": 33186
       }
     },
     {
@@ -233,7 +385,7 @@
       "name": "Logo Guesser",
       "emoji": "🔎",
       "description": "Identify the brand before time expires.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -248,11 +400,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": true,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Logo Guesser validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/logo-1.0.0.0.tgz",
-        "sha256": "c58f37da1c92f3303e2298fbd1f5810e1aaf6d178dc865c838c0e10a47d2640a",
-        "signature": "cTusVsPUWSjAN9Igi2uG+r9eQlMBy3K/wr+FjJPYldoW78iYgg2GM3gewmCCaV2GEmiRJjK/hYugcim15OuyAA==",
-        "size": 19629
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/logo-1.1.0.0.tgz",
+        "sha256": "3ff8578b7fe7a748d3b4ea4d5d1ee5e9c5e3498e72389f610f2bc555380ca272",
+        "signature": "xmUycXWVp5kr997ZRgKV8gKp/wlJP9pPkuOMzgmBgcKJ+Z/97CswJPoTUM6m+V4GD7DkhrU3u4+xboIQNAWBDQ==",
+        "size": 24349
       }
     },
     {
@@ -261,7 +432,7 @@
       "name": "Ludo",
       "emoji": "🎲",
       "description": "The classic race home.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -276,11 +447,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": true
+      },
+      "rules": {
+        "summary": "Ludo validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/ludo-1.0.0.0.tgz",
-        "sha256": "7a8e8a63936d7e35aa337bcbb6b1680593d476f3bfc66612b7c7afa97c5900ff",
-        "signature": "Ec4/zsXd3eOcOzn8yXT30Q22c8vZwPgXRWJ9I089szsIyKB4rer75AbP/T08o2mkDXboyHAL0j+/3pcgJZByDw==",
-        "size": 7803
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/ludo-1.1.0.0.tgz",
+        "sha256": "8975181197a5df3e547ad04444c8f79e4afaf8d2947f8509566fd25e166e1b19",
+        "signature": "jOyRzjaZkJqKYF9k7VLnJ7Ox63j9CQQuLAqceAXJpWxyMald969vxzAk9YmVOkWccD1YZls68rEX/U1albvPCA==",
+        "size": 12311
       }
     },
     {
@@ -289,7 +479,7 @@
       "name": "Market Price",
       "emoji": "🛒",
       "description": "Guess the Naija market price.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 1,
       "maxPlayers": 12,
       "capabilities": {
@@ -304,11 +494,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Market Price validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/market-price-1.0.0.0.tgz",
-        "sha256": "27001579e6d30dfa9e79113f1c6d377e98f47b8466ad16bf2090d996cbb81ec4",
-        "signature": "vykvD1ouAmduZj8Og93jVipW8A8QxpxUfifuQB4l7wJPZqW4Vqgz0A4W6SouIOe2Y1fowj7/65FVK/kQnjY3Ag==",
-        "size": 5360
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/market-price-1.1.0.0.tgz",
+        "sha256": "c92a16e0621a8f0c1be6062144762cfb4753ccaae229e3579fb104e3a9b0f6da",
+        "signature": "dqyfNN8lf9ZEyMSaSQp5hK0iW/hnT1bL5fkgfcIsJ6JgTX9OAHpSJf2h2hoJIrlmWNmKasYRX4M36n4vEM30CQ==",
+        "size": 9861
       }
     },
     {
@@ -317,7 +526,7 @@
       "name": "Pidgin Translator",
       "emoji": "🗣️",
       "description": "Translate between English and Pidgin.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 1,
       "maxPlayers": 12,
       "capabilities": {
@@ -332,11 +541,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Pidgin Translator validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/pidgin-translator-1.0.0.0.tgz",
-        "sha256": "c60a126a84e734f01cad99489308416e5430b390048b8e6e905f7277870fb743",
-        "signature": "LOKbCcE/NRCbE0qOxHNdJn4Asu/9qBE+1ai/VNC/va3/OmgCjx1cb/xO/Sf4HMem6xtC7Mr8akEAQaGGuOdsCg==",
-        "size": 5149
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/pidgin-translator-1.1.0.0.tgz",
+        "sha256": "fd187383895817a8ba3e2f78d3b2b841b16eea53b50c6a0c8022698852361e80",
+        "signature": "SVjztbJYG1IBuGDdpS0LCkH+rmLIgbHRkMaNKJ4ZOrPrz8bcAJadTnoSVcepCgXOMDVWpGfL1s1030GApIDCAw==",
+        "size": 9624
       }
     },
     {
@@ -345,7 +573,7 @@
       "name": "Who Sabi Pass?",
       "emoji": "🇳🇬",
       "description": "Naija culture, history, music and film trivia.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -360,11 +588,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": true,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Who Sabi Pass? validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/trivia-1.0.0.0.tgz",
-        "sha256": "07244ba865926274d70998776962170c1d5c6389060c088360f66c2779b4bf3a",
-        "signature": "BzIu0IO7P0Jd4ofWlKjDZRxCooaP4hyra06XukYGwvil26AqoAr2Kj4aojk4/QrpPwPBcfKojldQ4NhNLtE1CA==",
-        "size": 30698
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/trivia-1.1.0.0.tgz",
+        "sha256": "caab3da84df142744f389f7edd8a49ee8ed7ef9730514c1ec6fbf0cbdde51a83",
+        "signature": "R6EaRpL4ownT59dGol+uBLYojv+EtrabOgQRShuU+ByPjapyKajghv0ZAsj/uII2loaOMVt4dT7Msh3ilFs6BQ==",
+        "size": 35657
       }
     },
     {
@@ -373,7 +620,7 @@
       "name": "Whot",
       "emoji": "🃏",
       "description": "Nigerian shape-and-number showdown.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -388,11 +635,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": true
+      },
+      "rules": {
+        "summary": "Whot validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/whot-1.0.0.0.tgz",
-        "sha256": "7446bed1021a4a222881626b298902fc88126c2df1e7afdf9e30458f89fe5722",
-        "signature": "O7hzjNgkzB0jkg7C3x2nGXV5bSAz+rmyiLrOjg1xrsplzW7MNVUwOxdVcHSN74c953i/Qb9S4GRmY+aqmU+UBw==",
-        "size": 20528
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/whot-1.1.0.0.tgz",
+        "sha256": "362d09b8af84fe2f45adf030bed50bd6fa11e8dfce5ecb5b4c6d847b2ccb75ef",
+        "signature": "wvHkjkJ0f9NZBFtDtmnh7luMde58PpOoKNwP5F7vekgz9zuHZx9uK+T+Wfhn0cv4lGBH4oMIWQBzj3Ma0ZJ4Aw==",
+        "size": 25111
       }
     },
     {
@@ -401,7 +667,7 @@
       "name": "Word Wahala",
       "emoji": "🔤",
       "description": "Naija word-board showdown.",
-      "version": "1.0.0.0",
+      "version": "1.1.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -416,11 +682,30 @@
         "controller": "source/controller.js",
         "companion": "source/companion.js"
       },
+      "ai": {
+        "commentary": true,
+        "hints": false,
+        "rules": true,
+        "recommendations": true,
+        "recaps": true,
+        "moderation": false,
+        "deterministicBots": false
+      },
+      "rules": {
+        "summary": "Word Wahala validates every player action on the server and exposes legal actions without revealing private state.",
+        "intents": [
+          "answer",
+          "guess",
+          "answer_text",
+          "submit_order",
+          "advance"
+        ]
+      },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.0.0.0/word-wahala-1.0.0.0.tgz",
-        "sha256": "166449eebfc74df1c4189b840364858b175b0ee45124a8aee038ac780c4d4103",
-        "signature": "fACS+E9t9d3Zfg/lTjJHhOkXHsO2P9DZRl3/T6GJgYFVUQrhSEVF3zZSEZql//ZDlXCxHMAf1UDaziLyoPb3DA==",
-        "size": 28837
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.1.0.0/word-wahala-1.1.0.0.tgz",
+        "sha256": "47e82bb144c5f706df47c404a4f7606fbf1efecc325142924543b9b65301b0b8",
+        "signature": "bGH23LUhCBOWGdb79UF8PFXG8DfDljGAR8J5Bda1xCw3oy9oOo4TbRk6EDczugj6fDixmABJA7dBkyR9UQEWBw==",
+        "size": 33453
       }
     }
   ]

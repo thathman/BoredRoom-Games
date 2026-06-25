@@ -10,5 +10,8 @@ test('catalog contains 15 unique four-part-version games', async () => {
     assert.match(game.version, /^\d+\.\d+\.\d+\.\d+$/);
     assert.match(game.artifact.sha256, /^[a-f0-9]{64}$/);
     assert.ok(game.artifact.signature);
+    assert.equal(game.ai.rules, true);
+    assert.equal(game.ai.recaps, true);
+    assert.ok(game.rules.summary);
   }
 });
