@@ -20,7 +20,19 @@ for (const id of (await readdir(gamesRoot)).sort()) {
   const manifest = JSON.parse(await readFile(path.join(gameDir, 'manifest.json'), 'utf8'));
   const artifactName = `${id}-${manifest.version}.tgz`;
   const artifactPath = path.join(dist, artifactName);
-  const packed = spawnSync('tar', ['-czf', artifactPath, '-C', gameDir, 'manifest.json', 'source'], {
+  const packed = spawnSync('tar', [
+    '--sort=name',
+    '--mtime=@0',
+    '--owner=0',
+    '--group=0',
+    '--numeric-owner',
+    '-czf',
+    artifactPath,
+    '-C',
+    gameDir,
+    'manifest.json',
+    'source',
+  ], {
     stdio: 'inherit',
   });
   if (packed.status !== 0) throw new Error(`Could not package ${id}`);
