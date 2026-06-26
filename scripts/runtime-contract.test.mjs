@@ -65,12 +65,17 @@ test('connect-4 enforces turns, drops counters and detects a horizontal win', as
   assert.equal(runtime.publicState().winningCells.length, 4);
 });
 
-test('endless tic tac toe places marks and detects a diagonal win', async () => {
+test('endless tic tac toe places marks and detects a win with rolling mechanic', async () => {
   const runtime = createRuntimeFor('ettt');
+  runtime.configure({ sessionId: 's', gameRunId: 'r', settings: { targetScore: 1, activeMarkLimit: 3, seed: 42 } });
+  runtime.seatPlayers([{ id: 'p1', name: 'X' }, { id: 'p2', name: 'O' }]);
+  runtime.start();
+  // Place marks to create diagonal win for p1: cells 0, 4, 8
   for (const [playerId, cell] of [['p1', 0], ['p2', 1], ['p1', 4], ['p2', 2]]) {
     assert.equal(runtime.handleIntent(playerId, { type: 'place', cell }, false), true);
   }
   assert.equal(runtime.handleIntent('p1', { type: 'place', cell: 8 }, false), true);
+  // With targetScore 1, one win ends the game
   assert.equal(runtime.publicState().phase, 'finished');
   assert.deepEqual(runtime.publicState().winnerPlayerIds, ['p1']);
 });
@@ -99,6 +104,63 @@ test('whot keeps hands private, plays legal cards and rejects illegal cards', as
   assert.equal(runtime.handleIntent('p1', legal, false), true);
   assert.equal(runtime.handleIntent('p2', { type: 'play_card', cardId: 'not-in-hand' }, false), false);
 });
+
+test('whot uses the full 54-card deck and a deterministic seeded shuffle', async () => {
+  const a = whotWithSeed(42);
+  const b = whotWithSeed(42);
+  const c = whotWithSeed(99);
+  // Same seed reproduces the exact same opening top card; a different seed usually differs.
+  assert.equal(a.publicState().topCard.id, b.publicState().topCard.id);
+  const totalA = a.publicState().drawPileCount + a.publicState().players.reduce((s, p) => s + p.handCount, 0) + 1;
+  assert.equal(totalA, 54);
+  assert.notEqual(a.publicState().topCard.id, c.publicState().topCard.id);
+});
+
+test('whot pick-two forces the next player to pick or stack', async () => {
+  const runtime = whotWithSeed(7);
+  // White-box a known position: p1 holds two Circle 2s, p2 holds an unrelated card.
+  runtime.hands = {
+    p1: [{ id: 'x1', shape: 'Circle', number: 2, label: 'Circle 2', isWhot: false }, { id: 'x2', shape: 'Triangle', number: 2, label: 'Triangle 2', isWhot: false }],
+    p2: [{ id: 'y1', shape: 'Star', number: 7, label: 'Star 7', isWhot: false }, { id: 'y2', shape: 'Cross', number: 2, label: 'Cross 2', isWhot: false }],
+  };
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.players = [{ id: 'p1', name: 'Ada', score: 0, handCount: 2 }, { id: 'p2', name: 'Tobi', score: 0, handCount: 2 }];
+  runtime.state.currentPlayerId = 'p1';
+  runtime.state.pendingPick = 0;
+
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'x1' }, false), true);
+  assert.equal(runtime.publicState().pendingPick, 2);
+  assert.equal(runtime.publicState().currentPlayerId, 'p2');
+  // p2 may only stack a matching 2; a Star 7 is illegal while a pick is pending.
+  assert.equal(runtime.handleIntent('p2', { type: 'play_card', cardId: 'y1' }, false), false);
+  assert.equal(runtime.handleIntent('p2', { type: 'play_card', cardId: 'y2' }, false), true);
+  assert.equal(runtime.publicState().pendingPick, 4);
+});
+
+test('whot bot serves a pending pick rather than an illegal play', async () => {
+  const runtime = whotWithSeed(3);
+  runtime.hands = { p1: [{ id: 'z', shape: 'Star', number: 7, label: 'Star 7', isWhot: false }], p2: [] };
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.players = [{ id: 'p1', name: 'Ada', score: 0, handCount: 1 }];
+  runtime.state.currentPlayerId = 'p1';
+  runtime.state.pendingPick = 2;
+  runtime.state.pendingPickRank = 2;
+  const intent = runtime.rankBotIntent('p1');
+  assert.equal(intent.type, 'draw');
+});
+
+function whotWithSeed(seed) {
+  const runtime = createPlugin({
+    id: 'whot', name: 'Whot', emoji: '🃏', version: '1.2.0.0',
+    minPlayers: 2, maxPlayers: 8,
+    capabilities: { bots: true, audience: true, hints: true, restore: true },
+    rules: { summary: 'whot rules', intents: [] },
+  }).createRuntime();
+  runtime.configure({ sessionId: 's', gameRunId: 'r', settings: { allowBots: true, seed } });
+  runtime.seatPlayers([{ id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' }]);
+  runtime.start();
+  return runtime;
+}
 
 function createRuntimeFor(id) {
   const runtime = createPlugin({

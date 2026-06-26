@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-catalog.mjs",
-    "test": "node --test scripts/*.test.mjs"
+    "test": "node --test --test-force-exit scripts/*.test.mjs games/*/tests/*.test.mjs"
   }
 }

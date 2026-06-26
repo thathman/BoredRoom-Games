@@ -41,11 +41,12 @@ for (const id of (await readdir(gamesRoot)).sort()) {
   const staging = path.join(dist, `.stage-${id}`);
   await mkdir(path.join(staging, 'source'), { recursive: true });
   await cp(path.join(gameDir, 'source'), path.join(staging, 'source'), { recursive: true });
-  await cp(path.join(root, 'runtime', 'game-runtime.js'), path.join(staging, 'source', 'runtime.js'));
+  // Copy the full runtime directory so per-game modules resolve correctly
+  await cp(path.join(root, 'runtime'), path.join(staging, 'source'), { recursive: true });
   await writeFile(path.join(staging, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(
     path.join(staging, 'source', 'server.js'),
-    `import { createPlugin } from './runtime.js';\nconst manifest = ${JSON.stringify(manifest)};\nexport const gamePlugin = createPlugin(manifest);\nexport default gamePlugin;\n`,
+    `import { createPlugin } from './runtime/game-runtime.js';\nconst manifest = ${JSON.stringify(manifest)};\nexport const gamePlugin = createPlugin(manifest);\nexport default gamePlugin;\n`,
   );
   const reproducibleFlags = process.platform === 'linux'
     ? ['--sort=name', '--mtime=@0', '--owner=0', '--group=0', '--numeric-owner']
