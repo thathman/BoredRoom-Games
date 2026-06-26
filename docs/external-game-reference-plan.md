@@ -1,6 +1,6 @@
 # External Game Reference Plan
 
-Last updated: 2026-06-26 21:00 WAT
+Last updated: 2026-06-26 22:05 WAT
 
 This repo must use a fork/adapt-first strategy for official games. Do not invent a board/card game from scratch when a usable open-source implementation exists. External code still has to be wrapped in BoredRoom’s server-authoritative `GameRuntime` contract and must pass private/public-state isolation, reconnect, snapshot, bot, and browser tests.
 
@@ -16,9 +16,9 @@ This repo must use a fork/adapt-first strategy for official games. Do not invent
 
 | BoredRoom game | Fork/adapt candidate | License | Use |
 |---|---|---:|---|
-| Oga Landlord | https://github.com/itaylayzer/Monopoly | MIT | **Primary fork/adapt target.** React + TypeScript Monopoly implementation with bots, sound/music, property UI, online/PeerJS concepts and board assets. Extract server-side rules, bot strategy, card/action vocabulary, board UX and audio cues; localize board/content to Nigeria and remove external room/network assumptions. |
+| Oga Landlord | https://github.com/christelbuchanan/Monopoly-Game | Author permission stated by Hendrix; no public license detected | **Preferred feature source.** Hendrix prefers this repo’s feature shape. Existing BoredRoom Landlord source already references it; permission is stated by the project owner. Preserve attribution/permission evidence in release notes. Use its board/property/card/jail/building/mortgage/auction/trade-style feature set as the target behavior. |
+| Oga Landlord | https://github.com/itaylayzer/Monopoly | MIT | Secondary source for bots, sound/music, property UI polish, React/TypeScript patterns, online/PeerJS concepts and board/audio assets. Extract only pieces that improve the preferred `christelbuchanan/Monopoly-Game` feature target. |
 | Oga Landlord | https://github.com/intrepidcoder/monopoly | MIT | Secondary reference only. Older JS/HTML implementation with useful Monopoly rules/card concepts, but less aligned with BoredRoom’s React/TS stack than `itaylayzer/Monopoly`. |
-| Oga Landlord | https://github.com/christelbuchanan/Monopoly-Game | Author permission stated by Hendrix; no public license detected | Existing BoredRoom Landlord source comments mention this repo. Permission is stated by the project owner, but record attribution/permission evidence in release notes before shipping. `itaylayzer/Monopoly` remains the stronger future source. |
 | Whot | https://github.com/mykeels/whot and https://github.com/mykeels/whot-server | MIT | Primary rules/API reference for Nigerian Whot behavior, card vocabulary, market/pick/suspension logic. |
 | Connect 4 | https://github.com/joshtom/connect-four-game | ISC in `package.json`; no LICENSE file found | User-preferred reference. Use only after preserving attribution/license notice because no standalone LICENSE file was detected. Simple JS board classes are useful for rule/UI audit; BoredRoom still needs server-authoritative team mode, best-of rounds and snapshot/restore. |
 | Connect 4 | https://github.com/kenrick95/c4 | MIT | Secondary safer-license reference. Keep available if `joshtom/connect-four-game` attribution/licensing is not sufficient for vendoring. |
@@ -38,8 +38,9 @@ This repo must use a fork/adapt-first strategy for official games. Do not invent
 
 ## Immediate implementation impact
 
-- Oga Landlord Phase now uses `itaylayzer/Monopoly` as primary and `intrepidcoder/monopoly` only as a secondary rule reference.
-- Existing Landlord source comments mention `christelbuchanan/Monopoly-Game`; GitHub metadata shows no detected license, but Hendrix states he has author permission. Keep attribution/permission evidence with the release record. Prefer `itaylayzer/Monopoly` for the next replacement/adaptation pass.
+- Oga Landlord Phase now uses `christelbuchanan/Monopoly-Game` as the preferred feature target because Hendrix prefers its features and states author permission is in place.
+- Use `itaylayzer/Monopoly` as a secondary source for bots, audio/music and React/TS implementation ideas; do not replace the preferred feature target unless the user changes direction.
+- Existing Landlord source comments mention `christelbuchanan/Monopoly-Game`; keep attribution/permission evidence with the release record.
 - Whot Phase should compare current runtime against `mykeels/whot` and `mykeels/whot-server` before adding more rules.
 - Faith Feud Phase should use `joshzcold/Friendly-Feud` as the primary source for host/display/buzzer/reveal flow and test coverage.
 - Connect 4 Phase should audit `joshtom/connect-four-game` first because the user selected it, but only vendor code if the package-level ISC license is preserved clearly; otherwise use it as reference and keep `kenrick95/c4` as MIT fallback.
