@@ -43,6 +43,7 @@ export class FaithFeudRuntime extends RuntimeBase {
     this.team2=this.players.slice(Math.ceil(this.players.length/2));
     this.teamId=0;
     this.subs={};
+    this.wrongGuesses=new Set();
     this.state = this.bs();
   }
 
@@ -66,7 +67,8 @@ export class FaithFeudRuntime extends RuntimeBase {
     if(!this.state||this.phase==='finished')return false;
     if(intent?.type==='advance'&&isHost){this.adv();this.state=this.bs();return true;}
     if((intent?.type==='answer_text'||intent?.type==='answer')&&(intent?.text||intent?.answer)){
-      if(this.subs[pid])return false;
+      // Active team keeps guessing (one answer at a time) until 3 strikes or the board clears,
+      // so a 1-per-team game never deadlocks. subs records the latest guess for display only.
       return this.handle(pid,String(intent?.text??intent?.answer??''));
     }
     return false;
@@ -79,10 +81,15 @@ export class FaithFeudRuntime extends RuntimeBase {
     if(pteam!==this.teamId&&!this.stealA)return false;
 
     const [,ans]=this.surveys[this.ci];
+    const norm=text.toLowerCase().trim();
+    if(!norm)return false;
     const m=matchAnswer(text,ans);
+    // A wrong answer the team already tried this round is a no-op (no extra strike, no spam).
+    if(!m&&this.wrongGuesses.has(norm))return false;
     this.subs[pid]={text,correct:!!m,time:Date.now()};
 
     if(!m){
+      this.wrongGuesses.add(norm);
       this.strikes+=1;
       if(this.strikes>=this.maxStrikes){
         if(this.steals&&!this.stealA){this.stealA=true;this.strikes=0;}
@@ -115,7 +122,7 @@ export class FaithFeudRuntime extends RuntimeBase {
     return true;
   }
 
-  adv(){this.ci+=1;this.rev=[];this.strikes=0;this.stealA=false;this.teamId=(this.teamId+1)%2;this.subs={};
+  adv(){this.ci+=1;this.rev=[];this.strikes=0;this.stealA=false;this.teamId=(this.teamId+1)%2;this.subs={};this.wrongGuesses=new Set();
     if(this.ci>=this.totalRounds){this.phase='finished';this.state=this.bs();this.state.phase='finished';
       this.state.winnerPlayerIds=topPlayers(this.players);
       this.state.lastAction=this.state.winnerPlayerIds.length>1?'Draw!':`${this.players.find(p=>p.id===this.state.winnerPlayerIds[0])?.name} wins!`;return;}
@@ -124,7 +131,16 @@ export class FaithFeudRuntime extends RuntimeBase {
   publicState(){return clone(this.state);}
   privateState(pid){return {seated:this.seated(pid),team:this.team1.some(p=>p.id===pid)?0:1,submitted:!!this.subs[pid],legalIntents:this.legalIntents(pid)};}
   legalIntents(pid){if(!this.state||!this.seated(pid))return[];return [{type:'answer_text',label:'Type your answer'}];}
-  rankBotIntent(){return {type:'answer_text',text:'traffic'};}
-  extraSnapshot(){return {surveys:this.surveys,ci:this.ci,rev:this.rev,strikes:this.strikes,stealA:this.stealA,teamId:this.teamId,team1:this.team1,team2:this.team2,phase:this.phase,subs:this.subs};}
-  restoreExtra(e){this.surveys=e?.surveys??[];this.ci=e?.ci??0;this.rev=e?.rev??[];this.strikes=e?.strikes??0;this.stealA=e?.stealA??false;this.teamId=e?.teamId??0;this.team1=e?.team1??[];this.team2=e?.team2??[];this.phase=e?.phase??'faceoff';this.subs=e?.subs??{};}
+  // Server-side bot: pick the highest-point answer the board has not revealed yet. This runs on
+  // the server through legal intents only and is never exposed to human players' private state.
+  rankBotIntent(){
+    const survey=this.surveys[this.ci];
+    if(!survey)return {type:'answer_text',text:'pass'};
+    const [,ans]=survey;
+    const remaining=ans.filter((a,i)=>!this.rev.some(r=>r.index===i)).filter(a=>!this.wrongGuesses.has(a.text.toLowerCase()));
+    const best=remaining.sort((a,b)=>b.points-a.points)[0];
+    return {type:'answer_text',text:best?best.text:'pass'};
+  }
+  extraSnapshot(){return {surveys:this.surveys,ci:this.ci,rev:this.rev,strikes:this.strikes,stealA:this.stealA,teamId:this.teamId,team1:this.team1,team2:this.team2,phase:this.phase,subs:this.subs,wrongGuesses:[...(this.wrongGuesses??[])]};}
+  restoreExtra(e){this.surveys=e?.surveys??[];this.ci=e?.ci??0;this.rev=e?.rev??[];this.strikes=e?.strikes??0;this.stealA=e?.stealA??false;this.teamId=e?.teamId??0;this.team1=e?.team1??[];this.team2=e?.team2??[];this.phase=e?.phase??'faceoff';this.subs=e?.subs??{};this.wrongGuesses=new Set(e?.wrongGuesses??[]);}
 }
