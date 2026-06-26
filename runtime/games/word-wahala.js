@@ -65,6 +65,34 @@ export class WordWahalaRuntime extends RuntimeBase {
       this.revealRound(); return true;
     }
     if (this.state.phase !== 'playing' || this.state.submissions?.[playerId]) return false;
+
+    // Pass: forfeit the round's word for zero points.
+    if (intent?.type === 'pass') {
+      this.state.submissions[playerId] = { word: '(pass)', score: 0 };
+      this.state.submittedCount = Object.keys(this.state.submissions).length;
+      this.state.lastAction = `${this.playerName(playerId)} passed.`;
+      if (this.state.submittedCount >= this.players.length) this.revealRound();
+      return true;
+    }
+
+    // Swap: return chosen rack tiles to the bag, draw replacements, and use up the turn.
+    if (intent?.type === 'swap') {
+      const rack = this.racks[playerId] ?? [];
+      const ids = Array.isArray(intent.tileIds) ? intent.tileIds.map(String) : [];
+      const swapping = ids.length ? rack.filter((t) => ids.includes(t.id)) : rack.slice(0, Math.min(rack.length, this.bag.length));
+      if (swapping.length === 0 || this.bag.length < swapping.length) return false;
+      const keep = rack.filter((t) => !swapping.includes(t));
+      const drawn = this.bag.splice(0, swapping.length);
+      this.bag.push(...swapping);
+      this.racks[playerId] = [...keep, ...drawn];
+      this.state.submissions[playerId] = { word: '(swap)', score: 0 };
+      this.state.submittedCount = Object.keys(this.state.submissions).length;
+      this.state.bagCount = this.bag.length;
+      this.state.lastAction = `${this.playerName(playerId)} swapped ${swapping.length} tile(s).`;
+      if (this.state.submittedCount >= this.players.length) this.revealRound();
+      return true;
+    }
+
     if (intent?.type !== 'answer_text' || !intent?.text) return false;
 
     const word = String(intent.text).toUpperCase().trim();
@@ -147,7 +175,10 @@ export class WordWahalaRuntime extends RuntimeBase {
   }
   legalIntents(id) {
     if (!this.state || this.state.phase !== 'playing' || this.state.submissions?.[id] || !this.seated(id)) return [];
-    return [{ type: 'answer_text', label: 'Spell a word' }];
+    const intents = [{ type: 'answer_text', label: 'Spell a word' }];
+    if (this.bag.length > 0) intents.push({ type: 'swap', label: 'Swap tiles' });
+    intents.push({ type: 'pass', label: 'Pass' });
+    return intents;
   }
   rankBotIntent(id) {
     if (!this.state || this.state.phase !== 'playing' || this.state.submissions?.[id]) return null;
