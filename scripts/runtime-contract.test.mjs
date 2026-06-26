@@ -81,14 +81,22 @@ test('endless tic tac toe places marks and detects a win with rolling mechanic',
 });
 
 test('ludo rolls, brings a token out, rotates turns and rejects illegal movement', async () => {
-  const runtime = createRuntimeFor('ludo');
+  // seed 9 → rolls 6 then 1: bring out on the six (extra turn), then the one passes the turn.
+  const runtime = createPlugin({
+    id: 'ludo', name: 'Ludo', emoji: '🎲', version: '1.2.0.0', minPlayers: 2, maxPlayers: 4,
+    capabilities: { bots: true, audience: true, hints: true, restore: true },
+    rules: { summary: 'ludo rules', intents: [] },
+  }).createRuntime();
+  runtime.configure({ sessionId: 's', gameRunId: 'r', settings: { seed: 9 } });
+  runtime.seatPlayers([{ id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' }]);
+  runtime.start();
   assert.equal(runtime.handleIntent('p1', { type: 'move_token', tokenIndex: 0 }, false), false);
   assert.equal(runtime.handleIntent('p1', { type: 'roll' }, false), true);
   assert.equal(runtime.publicState().pendingRoll, 6);
   assert.equal(runtime.handleIntent('p1', { type: 'move_token', tokenIndex: 0 }, false), true);
   assert.equal(runtime.privateState('p1').tokens[0], 0);
-  assert.equal(runtime.publicState().currentPlayerId, 'p1');
-  runtime.handleIntent('p1', { type: 'roll' }, false);
+  assert.equal(runtime.publicState().currentPlayerId, 'p1'); // six keeps the turn
+  runtime.handleIntent('p1', { type: 'roll' }, false); // rolls a 1
   runtime.handleIntent('p1', { type: 'move_token', tokenIndex: 0 }, false);
   assert.equal(runtime.publicState().currentPlayerId, 'p2');
 });
