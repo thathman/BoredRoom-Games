@@ -177,3 +177,31 @@ test('bot places valid cell', () => {
   assert.equal(intent.type, 'place');
   assert.equal(play(runtime, 'p1', intent.cell), true);
 });
+
+test('team mode restore keeps shared mark pools and config', () => {
+  const runtime = new EtttRuntime({
+    id: 'ettt', name: 'Endless TTT', emoji: '⭕', version: '2.0.0.0',
+    minPlayers: 2, maxPlayers: 4, capabilities: { bots: true, audience: true, hints: false, restore: true },
+  });
+  runtime.configure({ sessionId: 's', gameRunId: 'r', settings: { activeMarkLimit: 3, targetScore: 2, teamMode: true } });
+  runtime.seatPlayers([{ id: 'a1', name: 'A1' }, { id: 'b1', name: 'B1' }, { id: 'a2', name: 'A2' }, { id: 'b2', name: 'B2' }]);
+  runtime.start();
+  // Team A (a1) and team B (b1) each place; a2 shares A's pool.
+  runtime.handleIntent('a1', { type: 'place', cell: 0 }, false);
+  runtime.handleIntent('b1', { type: 'place', cell: 4 }, false);
+  const snap = runtime.snapshot();
+
+  const restored = new EtttRuntime({
+    id: 'ettt', name: 'Endless TTT', emoji: '⭕', version: '2.0.0.0',
+    minPlayers: 2, maxPlayers: 4, capabilities: { bots: true, audience: true, hints: false, restore: true },
+  });
+  restored.configure({ sessionId: 's', gameRunId: 'r', settings: {} }); // fresh config differs on purpose
+  restored.seatPlayers([]);
+  restored.start();
+  restored.restore(snap);
+  assert.equal(restored.teamMode, true);
+  assert.equal(restored.targetScore, 2);
+  assert.deepEqual(restored.publicState(), runtime.publicState());
+  // a2 shares team A's pool: continuing the game uses team keys, not per-player keys.
+  assert.equal(restored.privateState('a2').team, 0);
+});

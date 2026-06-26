@@ -183,11 +183,19 @@ export class EtttRuntime extends RuntimeBase {
     return {
       markQueues: this.markQueues,
       teamAssignments: this.teamAssignments,
+      // Config is instance state read during play; persist it so a restored game (especially
+      // team mode) keeps the right mark pools, roll-off limit and target score.
+      activeMarkLimit: this.activeMarkLimit,
+      targetScore: this.targetScore,
+      teamMode: this.teamMode,
     };
   }
 
   restoreExtra(extra) {
     this.markQueues = extra?.markQueues ?? {};
     this.teamAssignments = extra?.teamAssignments ?? {};
+    if (extra?.activeMarkLimit != null) this.activeMarkLimit = extra.activeMarkLimit;
+    if (extra?.targetScore != null) this.targetScore = extra.targetScore;
+    if (extra?.teamMode != null) this.teamMode = extra.teamMode;
   }
 }
