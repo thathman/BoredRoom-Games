@@ -115,7 +115,7 @@ export class LandlordRuntime extends RuntimeBase {
       this.state.lastAction = `${this.playerName(playerId)} paid ₦${cell.amount.toLocaleString()} tax.`;
       this.checkBankruptcy(playerId);
     } else if (cell.type === 'property') {
-      const owner = this.findOwner(cell);
+      const owner = this.findOwnerOfPosition(pos);
       if (!owner) {
         this.state.cellProps = { price: cell.price, owned: false };
         this.state.lastAction = `${cell.name}: Buy for ₦${cell.price.toLocaleString()} or pass.`;
@@ -134,7 +134,7 @@ export class LandlordRuntime extends RuntimeBase {
       this.state.lastAction = `${this.playerName(playerId)} paid ₦${cell.amount.toLocaleString()} penalty.`;
       this.checkBankruptcy(playerId);
     } else if (cell.type === 'rail') {
-      const owner = this.findOwner(cell);
+      const owner = this.findOwnerOfPosition(pos);
       if (!owner) {
         this.state.cellProps = { price: cell.price, owned: false };
         this.updatePlayerCash();
@@ -160,7 +160,7 @@ export class LandlordRuntime extends RuntimeBase {
     const pos = this.positions[playerId];
     const cell = this.board[pos];
     if (!cell || (cell.type !== 'property' && cell.type !== 'rail')) return false;
-    if (this.findOwner(cell)) return false;
+    if (this.findOwnerOfPosition(pos)) return false;
     if (this.cash[playerId] < cell.price) return false;
 
     this.cash[playerId] -= cell.price;
@@ -196,9 +196,10 @@ export class LandlordRuntime extends RuntimeBase {
     return true;
   }
 
-  findOwner(cell) {
+  // Owner of the property at a board index, or null. (Properties are tracked by cell index.)
+  findOwnerOfPosition(pos) {
     for (const [pid, props] of Object.entries(this.properties)) {
-      if (props.some((p) => p === this.state.positions[pid] || this.board[p] === cell)) return pid;
+      if (props.includes(pos)) return pid;
     }
     return null;
   }
