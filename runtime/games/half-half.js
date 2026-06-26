@@ -30,22 +30,21 @@ export class HalfHalfRuntime extends RuntimeBase {
     this.totalRounds = Math.min(10, Math.max(3, Number(this.context?.settings?.rounds) || 5));
 
     this.currentRound = 0;
+    this.usedPrompts = new Set();
     this.prepareRound();
     this.state = { gameType: this.gameType, name: this.manifest.name, emoji: this.manifest.emoji, mode: 'challenge', phase: 'playing', round: 1, totalRounds: this.totalRounds, challenge: this.currentPrompt, players: clone(this.players.map((p) => ({ ...p }))), submittedCount: 0, submissions: {}, lastResults: [], winnerPlayerIds: [], lastAction: this.currentPrompt?.prompt ?? '' };
   }
 
+  // Pick a prompt the session has not used yet (resets only when the pool is exhausted).
   prepareRound() {
-    if (this.mode === 'midpoint_guess') {
-      const pool = MIDPOINT_PROMPTS;
-      const idx = Math.floor(this.rng() * pool.length);
-      const p = pool[idx];
-      this.currentPrompt = { kind: 'number', prompt: p.prompt, min: p.min, max: p.max, unit: p.unit };
-    } else {
-      const pool = SPLIT_PROMPTS;
-      const idx = Math.floor(this.rng() * pool.length);
-      const p = pool[idx];
-      this.currentPrompt = { kind: 'choice', prompt: p.prompt, options: p.sides };
-    }
+    const pool = this.mode === 'midpoint_guess' ? MIDPOINT_PROMPTS : SPLIT_PROMPTS;
+    let available = pool.filter((p) => !this.usedPrompts.has(p.prompt));
+    if (available.length === 0) { this.usedPrompts = new Set(); available = pool; }
+    const p = available[Math.floor(this.rng() * available.length)];
+    this.usedPrompts.add(p.prompt);
+    this.currentPrompt = this.mode === 'midpoint_guess'
+      ? { kind: 'number', prompt: p.prompt, min: p.min, max: p.max, unit: p.unit }
+      : { kind: 'choice', prompt: p.prompt, options: p.sides };
   }
 
   handleIntent(playerId, intent, isHost) {
@@ -147,10 +146,11 @@ export class HalfHalfRuntime extends RuntimeBase {
   rankBotIntent(id) {
     if (!this.state || this.state.phase !== 'playing' || this.state.submissions?.[id]) return null;
     const c = this.state.challenge;
-    if (c?.kind === 'choice') return { type: 'answer', optionIndex: Math.floor(Math.random() * (c.options?.length ?? 2)) };
-    if (c?.kind === 'number') return { type: 'guess', amount: Math.floor(c.min + Math.random() * (c.max - c.min)) };
+    // Deterministic bot draw from the seeded rng so replays/restores stay reproducible.
+    if (c?.kind === 'choice') return { type: 'answer', optionIndex: Math.floor(this.rng() * (c.options?.length ?? 2)) };
+    if (c?.kind === 'number') return { type: 'guess', amount: Math.round(c.min + this.rng() * (c.max - c.min)) };
     return null;
   }
-  extraSnapshot() { return { currentRound: this.currentRound, mode: this.mode, totalRounds: this.totalRounds }; }
-  restoreExtra(extra) { this.currentRound = extra?.currentRound ?? 0; this.mode = extra?.mode ?? 'split_vote'; this.totalRounds = extra?.totalRounds ?? 5; }
+  extraSnapshot() { return { currentRound: this.currentRound, mode: this.mode, totalRounds: this.totalRounds, usedPrompts: [...(this.usedPrompts ?? [])] }; }
+  restoreExtra(extra) { this.currentRound = extra?.currentRound ?? 0; this.mode = extra?.mode ?? 'split_vote'; this.totalRounds = extra?.totalRounds ?? 5; this.usedPrompts = new Set(extra?.usedPrompts ?? []); }
 }
