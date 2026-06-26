@@ -58,8 +58,15 @@ export class WhoSabiPassRuntime extends RuntimeBase {
     }
     if (pool.length === 0) pool = Object.values(QUESTION_BANK).flat();
 
-    this.questions = shuffleInPlace(clone(pool), rng).slice(0, this.questionCount);
+    // Shuffle the option order per question and remap the answer index — the bank stores the
+    // correct option first, so without this a player could always pick option 0 and win.
+    this.questions = shuffleInPlace(clone(pool), rng).slice(0, this.questionCount).map((q) => {
+      const correctText = q.options[q.answer];
+      const options = shuffleInPlace([...q.options], rng);
+      return { ...q, options, answer: options.indexOf(correctText) };
+    });
     this.currentIndex = 0;
+    this.seed = seed;
 
     this.state = {
       gameType: this.gameType,
@@ -157,14 +164,24 @@ export class WhoSabiPassRuntime extends RuntimeBase {
   }
   rankBotIntent(playerId) {
     if (!this.state || this.state.phase !== 'playing' || this.state.submissions?.[playerId]) return null;
-    return { type: 'answer', optionIndex: Math.floor(Math.random() * (this.state.challenge?.options?.length ?? 4)) };
+    const count = this.state.challenge?.options?.length ?? 4;
+    // Deterministic per (seed, question, player) so bots are reproducible and not all identical.
+    const hash = makeRng(((this.seed ?? 1) + this.currentIndex * 131 + this.playerHash(playerId)) >>> 0)();
+    return { type: 'answer', optionIndex: Math.floor(hash * count) };
+  }
+
+  playerHash(playerId) {
+    let h = 0;
+    for (const ch of String(playerId)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h;
   }
 
   extraSnapshot() {
-    return { questions: this.questions, currentIndex: this.currentIndex };
+    return { questions: this.questions, currentIndex: this.currentIndex, seed: this.seed };
   }
   restoreExtra(extra) {
     this.questions = extra?.questions ?? [];
     this.currentIndex = extra?.currentIndex ?? 0;
+    this.seed = extra?.seed ?? 1;
   }
 }
