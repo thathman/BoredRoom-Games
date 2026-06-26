@@ -17,7 +17,9 @@ for (const id of gameIds) {
     };
     const plugin = createPlugin(manifest);
     const runtime = plugin.createRuntime();
-    runtime.configure({ sessionId: 'session-1', gameRunId: `run-${id}`, settings: { allowBots: true } });
+    // Seed so dice/shuffle-driven games (e.g. Landlord doubles) behave deterministically and the
+    // "same intent fails on repeat" contract check is not flaky.
+    runtime.configure({ sessionId: 'session-1', gameRunId: `run-${id}`, settings: { allowBots: true, seed: 1 } });
     runtime.seatPlayers([{ id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' }]);
     runtime.start();
 

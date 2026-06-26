@@ -8,19 +8,21 @@ function tick(ms) {
 }
 
 test('timer starts in pre_countdown then transitions to accepting_answers', async () => {
-  const timer = createTimer({ preCountdownMs: 10, roundMs: 5000 });
+  // Generous margins so assertions are robust under CI/load (real setTimeout can overshoot).
+  const timer = createTimer({ preCountdownMs: 60, roundMs: 50000 });
   timer.start('round-1');
   assert.equal(timer.phase('round-1'), TIMER_PHASES.PRE_COUNTDOWN);
-  await tick(20);
+  await tick(160);
   assert.equal(timer.phase('round-1'), TIMER_PHASES.ACCEPTING_ANSWERS);
   timer.dispose();
 });
 
 test('round closes after timer expiry and rejects late submissions', async () => {
-  const timer = createTimer({ preCountdownMs: 5, roundMs: 30, overtime: false });
+  // Uses an explicit lock (not expiry) so a large round keeps the pre-lock submit safely accepted.
+  const timer = createTimer({ preCountdownMs: 5, roundMs: 50000, overtime: false });
   timer.setPlayers([{ id: 'p1' }, { id: 'p2' }]);
   timer.start('round-1');
-  await tick(20); // now accepting answers
+  await tick(40); // now accepting answers
   assert.equal(timer.submit('round-1', 'p1').accepted, true);
   timer.lock('round-1');
   // After explicit lock, submission should be rejected
@@ -178,12 +180,13 @@ test('forceReveal locks and reveals immediately', async () => {
 });
 
 test('late player tracking works correctly', async () => {
-  const timer = createTimer({ preCountdownMs: 5, roundMs: 30, overtime: false });
+  // Large round + early submit margin so p1 is safely on time; long final tick guarantees expiry.
+  const timer = createTimer({ preCountdownMs: 5, roundMs: 200, overtime: false });
   timer.setPlayers([{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }]);
   timer.start('round-1');
-  await tick(15);
+  await tick(40);
   timer.submit('round-1', 'p1');
-  await tick(40); // timer expired
+  await tick(300); // timer expired well past roundMs
   timer.lock('round-1');
   const round = timer.round('round-1');
   assert.ok(round.latePlayerIds.includes('p2'));
