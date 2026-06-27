@@ -53,9 +53,15 @@ for (const id of gameIds) {
       ? { ...legal, amount: Number.isFinite(Number(legal.amount)) ? Number(legal.amount) : 1000 }
       : legal.type === 'answer_text'
         ? { ...legal, text: typeof legal.text === 'string' ? legal.text : 'test' }
+        : legal.type === 'survey_answer'
+          ? { ...legal, answers: ['Music', 'Food'] }
+          : legal.type === 'voice_submission'
+            ? { ...legal, transcript: 'test translation' }
         : { ...legal };
     assert.equal(runtime.handleIntent('p1', intent, false), true);
-    if ('submitted' in runtime.privateState('p1')) assert.equal(runtime.privateState('p1').submitted, true);
+    if (['answer', 'answer_text', 'guess', 'submit_order', 'survey_answer', 'voice_submission'].includes(intent.type) && 'submitted' in runtime.privateState('p1')) {
+      assert.equal(runtime.privateState('p1').submitted, true);
+    }
     assert.equal(runtime.handleIntent('p1', intent, false), false);
 
     const snapshot = runtime.snapshot();

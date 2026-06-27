@@ -4,11 +4,11 @@
   "name": "Word Wahala",
   "emoji": "🔤",
   "description": "Naija word-board showdown.",
-  "version": "1.0.0.0",
+  "version": "1.3.0.0",
   "minPlayers": 2,
-  "maxPlayers": 4,
+  "maxPlayers": 8,
   "capabilities": {
-    "bots": false,
+    "bots": true,
     "audience": true,
     "hints": false,
     "restore": true

@@ -28,10 +28,17 @@ const PHRASE_BANK = [
 ];
 
 export class PidginTranslatorRuntime extends RuntimeBase {
+  get metadata() {
+    const metadata = super.metadata;
+    return { ...metadata, capabilities: { ...metadata.capabilities, voice: true } };
+  }
+
   start() {
     const seed = Number(this.context?.settings?.seed) || (Date.now() & 0xffffffff);
     const rng = makeRng(seed);
-    this.mode = String(this.context?.settings?.mode || 'text_only'); // voice_mode is opt-in due to privacy
+    // Voice-first by default, with a permanent typed fallback in the controller. Audio is never
+    // uploaded; browser speech recognition produces the transcript submitted to the server.
+    this.mode = String(this.context?.settings?.mode || 'speed_voice');
     this.questionCount = Math.min(15, Math.max(5, Number(this.context?.settings?.questionCount) || 10));
     this.direction = String(this.context?.settings?.direction || 'pidgin_to_english');
 
@@ -41,7 +48,7 @@ export class PidginTranslatorRuntime extends RuntimeBase {
 
     this.state = {
       gameType: this.gameType, name: this.manifest.name, emoji: this.manifest.emoji,
-      mode: 'challenge', phase: 'playing', round: 1, totalRounds: this.questionCount,
+      mode: 'pidgin', translationMode: this.mode, phase: 'playing', round: 1, totalRounds: this.questionCount,
       challenge: this.buildChallenge(), players: clone(this.players.map((p) => ({ ...p }))),
       submittedCount: 0, submissions: {}, lastResults: [], winnerPlayerIds: [],
       lastAction: 'Translate the phrase as fast as you can!',
@@ -66,9 +73,13 @@ export class PidginTranslatorRuntime extends RuntimeBase {
     if (this.state.phase !== 'playing' || this.state.submissions?.[playerId]) return false;
     if (intent?.type === 'answer_text' && intent?.text) {
       // Record submission time with server timestamp
-      this.state.submissions[playerId] = { text: String(intent.text), time: Date.now() };
+      const text = String(intent.text).trim().slice(0, 240);
+      if (!text) return false;
+      this.state.submissions[playerId] = { text, time: Date.now() };
     } else if (intent?.type === 'voice_submission' && intent?.transcript) {
-      this.state.submissions[playerId] = { text: String(intent.transcript), time: Date.now() };
+      const text = String(intent.transcript).trim().slice(0, 240);
+      if (!text) return false;
+      this.state.submissions[playerId] = { text, time: Date.now() };
     } else return false;
 
     this.state.submittedCount = Object.keys(this.state.submissions).length;
@@ -128,13 +139,26 @@ export class PidginTranslatorRuntime extends RuntimeBase {
   }
 
   playerName(id) { return this.state?.players?.find((p) => p.id === id)?.name ?? 'A player'; }
-  publicState() { return clone(this.state); }
+  publicState() {
+    const state = clone(this.state);
+    if (state.phase === 'playing') {
+      state.submissions = Object.fromEntries(Object.keys(state.submissions ?? {}).map((playerId) => [playerId, { submitted: true }]));
+    }
+    return state;
+  }
   privateState(id) {
-    return { seated: this.seated(id), submitted: this.state?.submissions?.[id] != null, legalIntents: this.legalIntents(id) };
+    return {
+      seated: this.seated(id), submitted: this.state?.submissions?.[id] != null,
+      submission: clone(this.state?.submissions?.[id] ?? null), translationMode: this.mode,
+      legalIntents: this.legalIntents(id),
+    };
   }
   legalIntents(id) {
     if (!this.state || this.state.phase !== 'playing' || this.state.submissions?.[id] || !this.seated(id)) return [];
-    return [{ type: 'answer_text', label: 'Type your translation' }];
+    const intents = [];
+    if (this.mode !== 'text_only') intents.push({ type: 'voice_submission', label: 'Record your translation' });
+    intents.push({ type: 'answer_text', label: 'Type your translation' });
+    return intents;
   }
   rankBotIntent(id) {
     if (!this.state || this.state.phase !== 'playing' || this.state.submissions?.[id]) return null;

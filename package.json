@@ -1,10 +1,12 @@
 {
   "name": "boredroom-games",
   "private": true,
-  "version": "1.2.0.0",
+  "version": "1.3.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/sync-word-dictionary.mjs",
     "build": "node scripts/build-catalog.mjs",
+    "pretest": "node scripts/sync-word-dictionary.mjs",
     "test": "node --test --test-force-exit scripts/*.test.mjs games/*/tests/*.test.mjs"
   }
 }

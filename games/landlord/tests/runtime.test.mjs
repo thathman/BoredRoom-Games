@@ -185,3 +185,109 @@ test('three doubles in a row sends a player to jail', () => {
   assert.equal(r.publicState().jail.p1 > 0, true);
   assert.equal(r.publicState().positions.p1, 10); // straight to Police Holding, no normal move
 });
+
+test('passing an unowned property starts an auction and highest remaining bidder wins', () => {
+  const r = makeLL({}, [
+    { id: 'p1', name: 'Ada' },
+    { id: 'p2', name: 'Tobi' },
+    { id: 'p3', name: 'Uche' },
+  ]);
+  forceRoll(r, 1);
+  r.handleIntent('p1', { type: 'roll' }, false);
+  assert.equal(r.handleIntent('p1', { type: 'pass' }, false), true);
+  assert.equal(r.publicState().auction.propertyPosition, 1);
+  assert.equal(r.handleIntent('p2', { type: 'auction_bid', amount: 4000 }, false), true);
+  assert.equal(r.handleIntent('p1', { type: 'auction_pass' }, false), true);
+  assert.equal(r.handleIntent('p3', { type: 'auction_pass' }, false), true);
+  assert.equal(r.publicState().auction, null);
+  assert.deepEqual(r.properties.p2, [1]);
+  assert.equal(r.cash.p2, 46000);
+  assert.equal(r.publicState().currentPlayerId, 'p2');
+});
+
+test('auction rejects low, unaffordable and retracted highest bids', () => {
+  const r = makeLL();
+  forceRoll(r, 1);
+  r.handleIntent('p1', { type: 'roll' }, false);
+  r.handleIntent('p1', { type: 'pass' }, false);
+  assert.equal(r.handleIntent('p1', { type: 'auction_bid', amount: 100 }, false), false);
+  assert.equal(r.handleIntent('p1', { type: 'auction_bid', amount: 60000 }, false), false);
+  assert.equal(r.handleIntent('p1', { type: 'auction_bid', amount: 1000 }, false), true);
+  assert.equal(r.handleIntent('p1', { type: 'auction_pass' }, false), false);
+  assert.equal(r.handleIntent('p2', { type: 'auction_bid', amount: 1200 }, false), false);
+});
+
+test('auction closes unsold instead of stalling when nobody can meet the minimum bid', () => {
+  const r = makeLL();
+  r.cash.p1 = 100;
+  r.cash.p2 = 100;
+  forceRoll(r, 1);
+  r.handleIntent('p1', { type: 'roll' }, false);
+  assert.equal(r.handleIntent('p1', { type: 'pass' }, false), true);
+  assert.equal(r.publicState().auction, null);
+  assert.equal(r.publicState().currentPlayerId, 'p2');
+  assert.deepEqual(r.properties.p1, []);
+  assert.deepEqual(r.properties.p2, []);
+});
+
+test('accepted trade atomically exchanges properties and cash', () => {
+  const r = makeLL();
+  r.properties.p1 = [1];
+  r.properties.p2 = [6];
+  r.state.properties = structuredClone(r.properties);
+  assert.equal(r.handleIntent('p1', {
+    type: 'propose_trade',
+    targetPlayerId: 'p2',
+    offeredProperties: [1],
+    requestedProperties: [6],
+    offeredCash: 2000,
+    requestedCash: 500,
+  }, false), true);
+  assert.deepEqual(r.legalIntents('p2').map((intent) => intent.type), ['accept_trade', 'reject_trade']);
+  assert.equal(r.handleIntent('p2', { type: 'accept_trade' }, false), true);
+  assert.deepEqual(r.properties.p1, [6]);
+  assert.deepEqual(r.properties.p2, [1]);
+  assert.equal(r.cash.p1, 48500);
+  assert.equal(r.cash.p2, 51500);
+  assert.equal(r.publicState().pendingTrade, null);
+});
+
+test('trade rejects stale ownership and improved properties', () => {
+  const r = makeLL();
+  r.properties.p1 = [1, 3];
+  r.properties.p2 = [6];
+  r.houses[1] = 1;
+  assert.equal(r.handleIntent('p1', {
+    type: 'propose_trade', targetPlayerId: 'p2', offeredProperties: [1], requestedProperties: [6],
+  }, false), false);
+  delete r.houses[1];
+  assert.equal(r.handleIntent('p1', {
+    type: 'propose_trade', targetPlayerId: 'p2', offeredProperties: [3], requestedProperties: [6],
+  }, false), true);
+  r.properties.p2 = []; // asset changed while recipient was deciding
+  assert.equal(r.handleIntent('p2', { type: 'accept_trade' }, false), false);
+  assert.equal(r.publicState().pendingTrade, null);
+});
+
+test('auction and pending trade survive snapshot restore', () => {
+  const auctionRuntime = makeLL();
+  forceRoll(auctionRuntime, 1);
+  auctionRuntime.handleIntent('p1', { type: 'roll' }, false);
+  auctionRuntime.handleIntent('p1', { type: 'pass' }, false);
+  auctionRuntime.handleIntent('p2', { type: 'auction_bid', amount: 1000 }, false);
+  const auctionSnapshot = auctionRuntime.snapshot();
+  const restoredAuction = makeLL();
+  restoredAuction.restore(auctionSnapshot);
+  assert.deepEqual(restoredAuction.publicState(), auctionRuntime.publicState());
+
+  const tradeRuntime = makeLL();
+  tradeRuntime.properties.p1 = [1];
+  tradeRuntime.properties.p2 = [6];
+  tradeRuntime.handleIntent('p1', {
+    type: 'propose_trade', targetPlayerId: 'p2', offeredProperties: [1], requestedProperties: [6],
+  }, false);
+  const tradeSnapshot = tradeRuntime.snapshot();
+  const restoredTrade = makeLL();
+  restoredTrade.restore(tradeSnapshot);
+  assert.deepEqual(restoredTrade.publicState(), tradeRuntime.publicState());
+});

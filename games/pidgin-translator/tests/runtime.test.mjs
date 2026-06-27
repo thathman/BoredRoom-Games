@@ -9,7 +9,7 @@ function makePidgin(settings = {}, players = [{ id: 'p1', name: 'Ada' }, { id: '
     id: 'pidgin-translator', name: 'Pidgin Translator', emoji: '🗣️', version: '1.2.0.0',
     minPlayers: 1, maxPlayers: 12, capabilities: { bots: true, audience: true, hints: true, restore: true },
   });
-  r.configure({ sessionId: 's', gameRunId: 'r', settings: { seed: 9, questionCount: 6, ...settings } });
+  r.configure({ sessionId: 's', gameRunId: 'r', settings: { seed: 9, questionCount: 6, mode: 'text_only', ...settings } });
   r.seatPlayers(players);
   r.start();
   return r;
@@ -42,9 +42,19 @@ test('voice submissions are accepted as a transcript (no raw audio stored)', () 
   const r = makePidgin({ mode: 'speed_voice' });
   const expected = r.questions[0].target;
   assert.equal(r.handleIntent('p1', { type: 'voice_submission', transcript: expected }, false), true);
-  const sub = r.publicState().submissions.p1;
-  assert.equal('text' in sub, true);
-  assert.equal('audio' in sub, false); // only the transcript is kept
+  const publicSub = r.publicState().submissions.p1;
+  assert.deepEqual(publicSub, { submitted: true });
+  assert.equal(JSON.stringify(r.publicState()).includes(expected), false);
+  const privateSub = r.privateState('p1').submission;
+  assert.equal(privateSub.text, expected);
+  assert.equal('audio' in privateSub, false); // only the transcript is kept
+  assert.equal(r.legalIntents('p2').some((intent) => intent.type === 'voice_submission'), true);
+});
+
+test('text-only mode does not advertise microphone intents', () => {
+  const r = makePidgin({ mode: 'text_only' });
+  assert.deepEqual(r.legalIntents('p1').map((intent) => intent.type), ['answer_text']);
+  assert.equal(r.metadata.capabilities.voice, true);
 });
 
 test('a wrong translation scores zero', () => {

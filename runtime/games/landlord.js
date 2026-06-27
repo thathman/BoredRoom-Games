@@ -50,6 +50,8 @@ const WAHALA_CARDS = [
 const JAIL_POS = 10; // Police Holding
 const JAIL_BAIL = 5000;
 const MAX_HOUSES = 4;
+const MIN_AUCTION_BID = 500;
+const AUCTION_INCREMENT = 500;
 
 export class LandlordRuntime extends RuntimeBase {
   start() {
@@ -68,6 +70,9 @@ export class LandlordRuntime extends RuntimeBase {
     this.mortgaged = {}; // cellIndex -> true
     this.jail = {}; // playerId -> jail turns served (0 = not jailed)
     this.doublesStreak = {}; // playerId -> consecutive doubles this turn-chain
+    this.auction = null;
+    this.pendingTrade = null;
+    this.tradeSequence = 0;
 
     for (const player of this.players) {
       this.cash[player.id] = this.startingCash;
@@ -95,13 +100,25 @@ export class LandlordRuntime extends RuntimeBase {
       rollAgain: this.state?.rollAgain ?? false,
       diceValue: this.state?.diceValue ?? null,
       cellProps: this.state?.cellProps ?? null,
+      auction: clone(this.auction),
+      pendingTrade: clone(this.pendingTrade),
       winnerPlayerIds: this.state?.winnerPlayerIds ?? [],
       lastAction: lastAction ?? this.state?.lastAction ?? '',
     };
   }
 
   handleIntent(playerId, intent, isHost) {
-    if (!this.state || this.state.phase !== 'playing' || this.state.currentPlayerId !== playerId) return false;
+    if (!this.state || this.state.phase !== 'playing' || !this.seated(playerId)) return false;
+
+    if (this.auction) return this.handleAuctionIntent(playerId, intent);
+    if (this.pendingTrade) return this.handleTradeDecision(playerId, intent);
+
+    if (intent?.type === 'propose_trade') {
+      if (this.state.currentPlayerId !== playerId) return false;
+      return this.proposeTrade(playerId, intent);
+    }
+
+    if (this.state.currentPlayerId !== playerId) return false;
     const blockedByPurchase = this.state.cellProps && !this.state.cellProps.owned;
 
     switch (intent?.type) {
@@ -111,7 +128,7 @@ export class LandlordRuntime extends RuntimeBase {
       case 'buy':
         return this.doBuy(playerId);
       case 'pass':
-        if (blockedByPurchase) { this.state.cellProps = null; }
+        if (blockedByPurchase) return this.startAuction(playerId);
         this.advanceTurn();
         this.state.lastAction = `${this.playerName(playerId)} passed.`;
         return true;
@@ -215,6 +232,188 @@ export class LandlordRuntime extends RuntimeBase {
     this.advanceTurn();
     this.updatePlayerCash();
     return true;
+  }
+
+  // --- Auctions ------------------------------------------------------------------------------
+  // Passing on an unowned property starts a public auction. The normal turn is suspended until
+  // every bidder except the highest bidder has passed, then ownership and cash move atomically.
+  startAuction(playerId) {
+    const position = this.positions[playerId];
+    const cell = this.board[position];
+    if (!cell || (cell.type !== 'property' && cell.type !== 'rail')) return false;
+    if (this.findOwnerOfPosition(position)) return false;
+    const eligiblePlayerIds = this.players.filter((player) => (this.cash[player.id] ?? 0) >= MIN_AUCTION_BID).map((player) => player.id);
+    this.auction = {
+      propertyPosition: position,
+      propertyName: cell.name,
+      currentBid: 0,
+      highestBidderId: null,
+      eligiblePlayerIds,
+      passedPlayerIds: [],
+      minimumNextBid: MIN_AUCTION_BID,
+      startedByPlayerId: playerId,
+    };
+    this.state.cellProps = null;
+    this.state.auction = clone(this.auction);
+    this.state.lastAction = `${this.playerName(playerId)} passed. Auction open for ${cell.name}!`;
+    if (eligiblePlayerIds.length === 0) this.resolveAuctionIfReady();
+    return true;
+  }
+
+  handleAuctionIntent(playerId, intent) {
+    const auction = this.auction;
+    if (!auction || !auction.eligiblePlayerIds.includes(playerId) || auction.passedPlayerIds.includes(playerId)) return false;
+
+    if (intent?.type === 'auction_pass') {
+      if (auction.highestBidderId === playerId) return false;
+      auction.passedPlayerIds.push(playerId);
+      this.state.lastAction = `${this.playerName(playerId)} left the auction.`;
+      this.resolveAuctionIfReady();
+      return true;
+    }
+
+    if (intent?.type !== 'auction_bid') return false;
+    const amount = Number(intent.amount);
+    const minimum = Math.max(MIN_AUCTION_BID, auction.currentBid + AUCTION_INCREMENT);
+    if (!Number.isSafeInteger(amount) || amount < minimum || amount > (this.cash[playerId] ?? 0)) return false;
+    auction.currentBid = amount;
+    auction.highestBidderId = playerId;
+    auction.minimumNextBid = amount + AUCTION_INCREMENT;
+    this.state.lastAction = `${this.playerName(playerId)} bid ₦${amount.toLocaleString()} for ${auction.propertyName}.`;
+    this.resolveAuctionIfReady();
+    return true;
+  }
+
+  resolveAuctionIfReady() {
+    const auction = this.auction;
+    if (!auction) return;
+    const active = auction.eligiblePlayerIds.filter((id) => !auction.passedPlayerIds.includes(id));
+    if (!auction.highestBidderId) {
+      if (active.length > 0) {
+        this.state.auction = clone(auction);
+        return;
+      }
+      this.state.lastAction = `${auction.propertyName} received no bids and stays with the bank.`;
+    } else {
+      const challengers = active.filter((id) => id !== auction.highestBidderId);
+      if (challengers.length > 0) {
+        this.state.auction = clone(auction);
+        return;
+      }
+      const winner = auction.highestBidderId;
+      if ((this.cash[winner] ?? 0) < auction.currentBid) {
+        // A stale bid cannot create money or ownership. Remove it and keep the auction open.
+        auction.passedPlayerIds.push(winner);
+        auction.highestBidderId = null;
+        auction.currentBid = 0;
+        auction.minimumNextBid = MIN_AUCTION_BID;
+        this.state.auction = clone(auction);
+        return;
+      }
+      this.cash[winner] -= auction.currentBid;
+      this.properties[winner] = [...(this.properties[winner] ?? []), auction.propertyPosition];
+      this.state.lastAction = `${this.playerName(winner)} won ${auction.propertyName} for ₦${auction.currentBid.toLocaleString()}!`;
+    }
+    this.auction = null;
+    this.state.auction = null;
+    this.state.properties = clone(this.properties);
+    this.advanceTurn();
+    this.updatePlayerCash();
+  }
+
+  // --- Bilateral trades ----------------------------------------------------------------------
+  // A proposal freezes normal turn actions until the recipient accepts/rejects or the proposer
+  // cancels. Acceptance revalidates all assets so stale/replayed proposals cannot transfer money.
+  proposeTrade(playerId, intent) {
+    const targetPlayerId = String(intent.targetPlayerId ?? '');
+    const offeredProperties = this.validPositionList(intent.offeredProperties);
+    const requestedProperties = this.validPositionList(intent.requestedProperties);
+    const offeredCash = Number(intent.offeredCash ?? 0);
+    const requestedCash = Number(intent.requestedCash ?? 0);
+    if (!targetPlayerId || targetPlayerId === playerId || !this.seated(targetPlayerId)) return false;
+    if (!Number.isSafeInteger(offeredCash) || offeredCash < 0 || !Number.isSafeInteger(requestedCash) || requestedCash < 0) return false;
+    if (offeredProperties.length === 0 && requestedProperties.length === 0 && offeredCash === 0 && requestedCash === 0) return false;
+    if (!this.tradeAssetsValid(playerId, targetPlayerId, offeredProperties, requestedProperties, offeredCash, requestedCash)) return false;
+
+    this.tradeSequence += 1;
+    this.pendingTrade = {
+      id: `trade-${this.tradeSequence}`,
+      proposerId: playerId,
+      targetPlayerId,
+      offeredProperties,
+      requestedProperties,
+      offeredCash,
+      requestedCash,
+    };
+    this.state.pendingTrade = clone(this.pendingTrade);
+    this.state.lastAction = `${this.playerName(playerId)} offered ${this.playerName(targetPlayerId)} a trade.`;
+    return true;
+  }
+
+  handleTradeDecision(playerId, intent) {
+    const trade = this.pendingTrade;
+    if (!trade) return false;
+    if (intent?.type === 'cancel_trade' && playerId === trade.proposerId) {
+      this.clearTrade(`${this.playerName(playerId)} cancelled the trade.`);
+      return true;
+    }
+    if (playerId !== trade.targetPlayerId || !['accept_trade', 'reject_trade'].includes(intent?.type)) return false;
+    if (intent.type === 'reject_trade') {
+      this.clearTrade(`${this.playerName(playerId)} rejected the trade.`);
+      return true;
+    }
+    if (!this.tradeAssetsValid(
+      trade.proposerId,
+      trade.targetPlayerId,
+      trade.offeredProperties,
+      trade.requestedProperties,
+      trade.offeredCash,
+      trade.requestedCash,
+    )) {
+      this.clearTrade('The trade expired because the assets changed.');
+      return false;
+    }
+
+    this.properties[trade.proposerId] = this.swapPropertyOwnership(
+      this.properties[trade.proposerId], trade.offeredProperties, trade.requestedProperties,
+    );
+    this.properties[trade.targetPlayerId] = this.swapPropertyOwnership(
+      this.properties[trade.targetPlayerId], trade.requestedProperties, trade.offeredProperties,
+    );
+    this.cash[trade.proposerId] += trade.requestedCash - trade.offeredCash;
+    this.cash[trade.targetPlayerId] += trade.offeredCash - trade.requestedCash;
+    const message = `${this.playerName(trade.proposerId)} and ${this.playerName(trade.targetPlayerId)} completed a trade.`;
+    this.pendingTrade = null;
+    this.state.pendingTrade = null;
+    this.state.properties = clone(this.properties);
+    this.state.lastAction = message;
+    this.updatePlayerCash();
+    return true;
+  }
+
+  validPositionList(value) {
+    if (!Array.isArray(value)) return [];
+    return [...new Set(value.map(Number).filter((position) => Number.isSafeInteger(position) && position >= 0 && position < this.board.length))];
+  }
+
+  tradeAssetsValid(proposerId, targetId, offeredProperties, requestedProperties, offeredCash, requestedCash) {
+    if ((this.cash[proposerId] ?? 0) < offeredCash || (this.cash[targetId] ?? 0) < requestedCash) return false;
+    if (!offeredProperties.every((position) => this.findOwnerOfPosition(position) === proposerId)) return false;
+    if (!requestedProperties.every((position) => this.findOwnerOfPosition(position) === targetId)) return false;
+    // Improved properties cannot be traded until their houses have been sold/removed.
+    if ([...offeredProperties, ...requestedProperties].some((position) => (this.houses[position] ?? 0) > 0)) return false;
+    return true;
+  }
+
+  swapPropertyOwnership(current, outgoing, incoming) {
+    const outgoingSet = new Set(outgoing);
+    return [...current.filter((position) => !outgoingSet.has(position)), ...incoming];
+  }
+
+  clearTrade(message) {
+    this.pendingTrade = null;
+    this.state.pendingTrade = null;
+    this.state.lastAction = message;
   }
 
   handleWahala(playerId) {
@@ -402,11 +601,30 @@ export class LandlordRuntime extends RuntimeBase {
       seated: this.seated(id), isTurn: this.state?.currentPlayerId === id,
       cash: this.cash?.[id], position: this.positions?.[id],
       properties: clone(this.properties?.[id] ?? []),
+      auction: clone(this.auction),
+      pendingTrade: clone(this.pendingTrade),
       legalIntents: this.legalIntents(id),
     };
   }
   legalIntents(id) {
-    if (!this.state || this.state.phase !== 'playing' || this.state.currentPlayerId !== id || !this.seated(id)) return [];
+    if (!this.state || this.state.phase !== 'playing' || !this.seated(id)) return [];
+    if (this.auction) {
+      if (!this.auction.eligiblePlayerIds.includes(id) || this.auction.passedPlayerIds.includes(id)) return [];
+      const intents = [];
+      const minimum = Math.max(MIN_AUCTION_BID, this.auction.currentBid + AUCTION_INCREMENT);
+      if ((this.cash[id] ?? 0) >= minimum) intents.push({ type: 'auction_bid', amount: minimum, minimum, label: `Bid ₦${minimum.toLocaleString()}` });
+      if (this.auction.highestBidderId !== id) intents.push({ type: 'auction_pass', label: 'Leave auction' });
+      return intents;
+    }
+    if (this.pendingTrade) {
+      if (this.pendingTrade.targetPlayerId === id) return [
+        { type: 'accept_trade', label: 'Accept trade' },
+        { type: 'reject_trade', label: 'Reject trade' },
+      ];
+      if (this.pendingTrade.proposerId === id) return [{ type: 'cancel_trade', label: 'Cancel trade' }];
+      return [];
+    }
+    if (this.state.currentPlayerId !== id) return [];
     if (this.state.cellProps && !this.state.cellProps.owned) {
       return [
         { type: 'buy', label: `Buy for ₦${this.state.cellProps.price.toLocaleString()}` },
@@ -419,6 +637,12 @@ export class LandlordRuntime extends RuntimeBase {
       return out;
     }
     const intents = [{ type: 'roll', label: `Roll dice${this.state.rollAgain ? ' (double!)' : ''}` }];
+    if (this.players.length > 1 && ((this.properties[id]?.length ?? 0) > 0 || (this.cash[id] ?? 0) > 0)) {
+      intents.push({
+        type: 'propose_trade', label: 'Propose a trade',
+        targets: this.players.filter((player) => player.id !== id).map((player) => player.id),
+      });
+    }
     // Management actions on your own properties.
     for (const pos of this.properties[id] ?? []) {
       const cell = this.board[pos];
@@ -444,6 +668,7 @@ export class LandlordRuntime extends RuntimeBase {
       cash: this.cash, positions: this.positions, properties: this.properties,
       houses: this.houses, mortgaged: this.mortgaged, jail: this.jail, doublesStreak: this.doublesStreak,
       wahalaDeck: this.wahalaDeck, wahalaIndex: this.wahalaIndex,
+      auction: this.auction, pendingTrade: this.pendingTrade, tradeSequence: this.tradeSequence,
     };
   }
   restoreExtra(extra) {
@@ -451,5 +676,6 @@ export class LandlordRuntime extends RuntimeBase {
     this.properties = extra?.properties ?? {};
     this.houses = extra?.houses ?? {}; this.mortgaged = extra?.mortgaged ?? {}; this.jail = extra?.jail ?? {}; this.doublesStreak = extra?.doublesStreak ?? {};
     this.wahalaDeck = extra?.wahalaDeck ?? clone(WAHALA_CARDS); this.wahalaIndex = extra?.wahalaIndex ?? 0;
+    this.auction = extra?.auction ?? null; this.pendingTrade = extra?.pendingTrade ?? null; this.tradeSequence = extra?.tradeSequence ?? 0;
   }
 }

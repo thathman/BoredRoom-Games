@@ -4,7 +4,7 @@
   "name": "Hustle",
   "emoji": "🪜",
   "description": "Climb come-ups and dodge wahala.",
-  "version": "1.0.0.0",
+  "version": "1.3.0.0",
   "minPlayers": 2,
   "maxPlayers": 4,
   "capabilities": {
