@@ -79,18 +79,26 @@ test('flag content set has flag-specific prompts', () => {
   assert.ok(state.challenge?.prompt.includes('flag') || state.challenge?.multiAccept);
 });
 
-test('flag prompts use a per-country explanation, not a hardcoded Nigerian one', () => {
-  // Multiple flags available; every generated flag prompt's explanation must match its country.
-  const runtime = makeColorWahala({ contentSet: 'flags', questionCount: 6, seed: 7 });
-  for (const q of runtime.prompts) {
-    if (!q.multiAccept) continue;
-    const country = q.prompt.match(/(Nigerian|Ghanaian|Kenyan|South African|Senegalese|Cameroonian)/)?.[1];
+test('flag prompts are procedurally generated from many countries with correct explanations', () => {
+  const runtime = makeColorWahala({ contentSet: 'flags', questionCount: 10, seed: 7 });
+  const flagPrompts = runtime.prompts.filter((q) => /flag/i.test(q.prompt));
+  assert.ok(flagPrompts.length >= 8, `expected many flag prompts, got ${flagPrompts.length}`);
+  // Each prompt names a country and its explanation references that same country.
+  for (const q of flagPrompts) {
+    const country = q.prompt.match(/the (.+?) flag/)?.[1];
     assert.ok(country, `flag prompt missing country: ${q.prompt}`);
-    if (country === 'Ghanaian') assert.ok(/Ghana/i.test(q.explanation));
-    if (country === 'Nigerian') assert.ok(/Nigerian/i.test(q.explanation));
+    assert.ok(q.explanation.includes(country), `explanation should mention ${country}: ${q.explanation}`);
   }
-  // At least 3 distinct flag questions are available now (was 2).
-  assert.ok(new Set(runtime.prompts.map((q) => q.prompt)).size >= 3);
+  // Drawn from a large in-memory database (>20 countries), so a 10-question game is varied.
+  assert.ok(new Set(flagPrompts.map((q) => q.prompt)).size >= 8);
+});
+
+test('avoidPrompts keeps flags fresh across the session', () => {
+  const first = makeColorWahala({ contentSet: 'flags', questionCount: 6 });
+  const usedIds = first.prompts.map((q) => q.id).filter(Boolean);
+  const next = makeColorWahala({ contentSet: 'flags', questionCount: 6, avoidPrompts: usedIds });
+  const overlap = next.prompts.map((q) => q.id).filter((id) => usedIds.includes(id));
+  assert.ok(overlap.length < usedIds.length, 'recent flags should be deprioritized');
 });
 
 test('snapshot and restore', () => {
