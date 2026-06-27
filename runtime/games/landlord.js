@@ -1,7 +1,14 @@
 // Oga Landlord — Monopoly-inspired Nigerian property game.
-// Board with properties, buy/pass, rent, property sets, upgrades, wahala cards.
+// Board with properties, buy/pass, rent, property sets, houses, mortgages, jail, wahala cards.
+//
+// Feature target follows christelbuchanan/Monopoly-Game (used with the project owner's stated
+// permission; that repo ships no LICENSE file, so its rule/feature set is treated as a
+// reference target only — no source code is vendored here). Rules are reimplemented as
+// deterministic, server-authoritative logic in BoredRoom's GameRuntime contract.
 
 import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
+
+const PASS_GO = 20000; // collected each time a token passes Start
 
 const BOARD_CELLS = [
   { name: 'Start', type: 'start', price: 0, rent: 0 },
@@ -60,6 +67,7 @@ export class LandlordRuntime extends RuntimeBase {
     this.houses = {}; // cellIndex -> house count
     this.mortgaged = {}; // cellIndex -> true
     this.jail = {}; // playerId -> jail turns served (0 = not jailed)
+    this.doublesStreak = {}; // playerId -> consecutive doubles this turn-chain
 
     for (const player of this.players) {
       this.cash[player.id] = this.startingCash;
@@ -126,9 +134,29 @@ export class LandlordRuntime extends RuntimeBase {
     const total = d1 + d2;
     const isDouble = d1 === d2;
 
+    // Three doubles in a row sends you straight to Police Holding (no move).
+    if (isDouble) {
+      this.doublesStreak[playerId] = (this.doublesStreak[playerId] ?? 0) + 1;
+      if (this.doublesStreak[playerId] >= 3) {
+        this.doublesStreak[playerId] = 0;
+        this.positions[playerId] = JAIL_POS;
+        this.jail[playerId] = 1;
+        this.state.positions = clone(this.positions);
+        this.state.diceValue = total;
+        this.state.lastAction = `${this.playerName(playerId)} rolled three doubles — off to holding!`;
+        this.advanceTurn();
+        this.updatePlayerCash();
+        return true;
+      }
+    } else {
+      this.doublesStreak[playerId] = 0;
+    }
+
     this.state.diceValue = total;
-    let pos = ((this.positions[playerId] ?? 0) + total) % this.board.length;
+    const from = this.positions[playerId] ?? 0;
+    let pos = (from + total) % this.board.length;
     if (pos < 0) pos += this.board.length;
+    if (from + total >= this.board.length) this.cash[playerId] += PASS_GO; // passed Start
     this.positions[playerId] = pos;
     this.state.positions = clone(this.positions);
 
@@ -272,8 +300,10 @@ export class LandlordRuntime extends RuntimeBase {
 
   // Shared move resolution used after leaving jail on a double.
   moveBy(playerId, total, isDouble) {
-    let pos = ((this.positions[playerId] ?? 0) + total) % this.board.length;
+    const from = this.positions[playerId] ?? 0;
+    let pos = (from + total) % this.board.length;
     if (pos < 0) pos += this.board.length;
+    if (from + total >= this.board.length) this.cash[playerId] += PASS_GO;
     this.positions[playerId] = pos;
     this.state.positions = clone(this.positions);
     const cell = this.board[pos];
@@ -412,14 +442,14 @@ export class LandlordRuntime extends RuntimeBase {
   extraSnapshot() {
     return {
       cash: this.cash, positions: this.positions, properties: this.properties,
-      houses: this.houses, mortgaged: this.mortgaged, jail: this.jail,
+      houses: this.houses, mortgaged: this.mortgaged, jail: this.jail, doublesStreak: this.doublesStreak,
       wahalaDeck: this.wahalaDeck, wahalaIndex: this.wahalaIndex,
     };
   }
   restoreExtra(extra) {
     this.cash = extra?.cash ?? {}; this.positions = extra?.positions ?? {};
     this.properties = extra?.properties ?? {};
-    this.houses = extra?.houses ?? {}; this.mortgaged = extra?.mortgaged ?? {}; this.jail = extra?.jail ?? {};
+    this.houses = extra?.houses ?? {}; this.mortgaged = extra?.mortgaged ?? {}; this.jail = extra?.jail ?? {}; this.doublesStreak = extra?.doublesStreak ?? {};
     this.wahalaDeck = extra?.wahalaDeck ?? clone(WAHALA_CARDS); this.wahalaIndex = extra?.wahalaIndex ?? 0;
   }
 }

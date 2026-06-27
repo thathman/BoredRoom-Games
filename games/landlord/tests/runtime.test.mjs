@@ -164,3 +164,24 @@ test('houses, mortgages and jail survive snapshot/restore', () => {
   assert.equal(r2.jail.p2, 2);
   assert.deepEqual(r2.publicState(), r.publicState());
 });
+
+test('passing Start awards the GO bonus', () => {
+  const r = makeLL();
+  r.positions.p1 = 18; // NEPA Bill; rolling will wrap past Start
+  r.state.currentPlayerId = 'p1';
+  forceRoll(r, 5); // 18 -> (18+5)%20 = 3, wraps past 0
+  const before = r.cash.p1;
+  r.handleIntent('p1', { type: 'roll' }, false);
+  // landed on index 3 (Alaba, a buyable property) so no rent/tax; cash only changes by +PASS_GO
+  assert.equal(r.cash.p1, before + 20000);
+});
+
+test('three doubles in a row sends a player to jail', () => {
+  const r = makeLL();
+  r.state.currentPlayerId = 'p1';
+  r.doublesStreak.p1 = 2; // two doubles already this turn-chain
+  r.rng = () => (3 - 1) / 6 + 0.01; // next roll is a double (3,3) -> the third
+  assert.equal(r.handleIntent('p1', { type: 'roll' }, false), true);
+  assert.equal(r.publicState().jail.p1 > 0, true);
+  assert.equal(r.publicState().positions.p1, 10); // straight to Police Holding, no normal move
+});
