@@ -79,6 +79,20 @@ test('flag content set has flag-specific prompts', () => {
   assert.ok(state.challenge?.prompt.includes('flag') || state.challenge?.multiAccept);
 });
 
+test('flag prompts use a per-country explanation, not a hardcoded Nigerian one', () => {
+  // Multiple flags available; every generated flag prompt's explanation must match its country.
+  const runtime = makeColorWahala({ contentSet: 'flags', questionCount: 6, seed: 7 });
+  for (const q of runtime.prompts) {
+    if (!q.multiAccept) continue;
+    const country = q.prompt.match(/(Nigerian|Ghanaian|Kenyan|South African|Senegalese|Cameroonian)/)?.[1];
+    assert.ok(country, `flag prompt missing country: ${q.prompt}`);
+    if (country === 'Ghanaian') assert.ok(/Ghana/i.test(q.explanation));
+    if (country === 'Nigerian') assert.ok(/Nigerian/i.test(q.explanation));
+  }
+  // At least 3 distinct flag questions are available now (was 2).
+  assert.ok(new Set(runtime.prompts.map((q) => q.prompt)).size >= 3);
+});
+
 test('snapshot and restore', () => {
   const a = makeColorWahala({ questionCount: 3 });
   a.handleIntent('p1', { type: 'answer', optionIndex: 0 }, false);

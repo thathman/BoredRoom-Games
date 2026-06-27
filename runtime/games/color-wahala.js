@@ -23,9 +23,15 @@ const COLORS = [
   { name: 'Black', hex: '#171717' },
 ];
 
+// Each flag question accepts every colour actually on that flag (multi-accept), with a correct
+// per-flag explanation. Single-stripe/ambiguous flags are avoided where the answer would be unfair.
 const ACCEPTABLE_FLAGS = {
-  'What colour is the Nigerian flag?': ['green', 'white'],
-  'What colour is the Ghanaian flag?': ['red', 'yellow', 'green'],
+  'Which colour is on the Nigerian flag?': { answers: ['green', 'white'], note: 'The Nigerian flag is green and white.' },
+  'Which colour is on the Ghanaian flag?': { answers: ['red', 'yellow', 'green'], note: 'Ghana: red, gold/yellow and green with a black star.' },
+  'Which colour is on the Kenyan flag?': { answers: ['black', 'red', 'green', 'white'], note: 'Kenya: black, red and green with white fimbriation.' },
+  'Which colour is on the South African flag?': { answers: ['black', 'red', 'green', 'yellow', 'blue', 'white'], note: 'South Africa is the most colourful: black, red, green, gold, blue and white.' },
+  'Which colour is on the Senegalese flag?': { answers: ['green', 'yellow', 'red'], note: 'Senegal: green, yellow and red with a green star.' },
+  'Which colour is on the Cameroonian flag?': { answers: ['green', 'red', 'yellow'], note: 'Cameroon: green, red and yellow with a gold star.' },
 };
 
 function generateStroopPrompts(count, difficulty, rng) {
@@ -71,7 +77,7 @@ function generateFlagPrompts(count, rng) {
   const prompts = [];
   const used = new Set();
   while (prompts.length < Math.min(count, flags.length)) {
-    const [question, answers] = flags[Math.floor(rng() * flags.length)];
+    const [question, { answers, note }] = flags[Math.floor(rng() * flags.length)];
     if (used.has(question)) continue;
     used.add(question);
     prompts.push({
@@ -79,7 +85,7 @@ function generateFlagPrompts(count, rng) {
       prompt: question,
       correctAnswer: answers,
       options: COLORS.map((c) => c.name),
-      explanation: `The Nigerian flag is green and white.`,
+      explanation: note,
       multiAccept: true,
     });
   }
