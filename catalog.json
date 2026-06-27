@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-26T00:48:09.398Z",
+  "generatedAt": "2026-06-27T08:31:42.759Z",
   "repository": "https://github.com/thathman/BoredRoom-Games",
   "games": [
     {
@@ -9,7 +9,7 @@
       "name": "Bible Timeline Rush",
       "emoji": "📜",
       "description": "Put the events in order, fast.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 1,
       "maxPlayers": 12,
       "capabilities": {
@@ -44,10 +44,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/bible-timeline-1.2.0.0.tgz",
-        "sha256": "8624a5b328cc7ad01c0d86bcc96dae10ee13965dabb9860bdd1106f4809df99b",
-        "signature": "W3SoI9Z+8CQJynk496lzbp8qp7To3Nx4FS+IGkhMjqc2UVrvR/Dt5stsLT129ctB/KMN6Ss2hSTO4tvk0QtCBQ==",
-        "size": 12633
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/bible-timeline-1.3.0.0.tgz",
+        "sha256": "83e15f1915def6c922aa3e663ce38054905d4cc0d2d835eaf5c0a3642acd6f55",
+        "signature": "Hm5G6v4BCrjpBANAGNFpynU1k9FkHvnjISBe3V2k3VYOmIux/fUajgONOFSD4kIJDTALZqUtnv1UvekoXtzmAA==",
+        "size": 63176
       }
     },
     {
@@ -56,7 +56,7 @@
       "name": "Color Wahala",
       "emoji": "🎨",
       "description": "Read the word, ignore the ink.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -91,10 +91,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/color-wahala-1.2.0.0.tgz",
-        "sha256": "cf98de3f95d6d9207926cb6b8134134a60c583ab0580f04ab33602bb3396c5b7",
-        "signature": "OZ7nzFr1p24186658HLhcVmOsMVqaOGgoKfOsA5LPyMcZcr4ixexDY0WHW096b63Jp2utWGYyWIgZhyN7izbCQ==",
-        "size": 23686
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/color-wahala-1.3.0.0.tgz",
+        "sha256": "fa79d6dfa50547e4b7f6b19ea94446dca7785a3dbf4c07967c29341a11cb8a31",
+        "signature": "v0qaSpYzgcnZNSlkzlMqY8ISwSGM8s0bpBZsQacsv6g/gipoU2d6dteXW5LOiHwHP4RO0evEdZ+o9AO3OjHUAQ==",
+        "size": 73513
       }
     },
     {
@@ -103,7 +103,7 @@
       "name": "Connect 4",
       "emoji": "🔴",
       "description": "Tag-team connect-four showdown.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -138,10 +138,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/connect-4-1.2.0.0.tgz",
-        "sha256": "a32cd05b787536c4eb87f4f6f9259582139245f673aeabc58d3ff22ce65e799f",
-        "signature": "5S8lFV3H94VI8allqGacLCQIFOgLYcETcndAz1QcYltmO04xkzzx3FxTJj5hmu+OXDwYoSwSHlxGdqmNo4/+Dg==",
-        "size": 19555
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/connect-4-1.3.0.0.tgz",
+        "sha256": "592f8b90deaf586c1d00dc41827e9d6a60f2bca05f590c668d784167caa58604",
+        "signature": "KB+dpfNoJg82F/kPtTHT+i+98JoyF8riXffB9rdm8Alj6lTel5bG6HHcq1M9zLIXCmAdDucBw5Emm9zRJ7gIAg==",
+        "size": 69397
       }
     },
     {
@@ -150,7 +150,7 @@
       "name": "Endless Tic Tac Toe",
       "emoji": "✕",
       "description": "Rolling three-piece team memory.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -185,10 +185,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/ettt-1.2.0.0.tgz",
-        "sha256": "0a323807299a2c3a2673207b44c3a4ce1c516647c8fa895fddbd63d6df374c6d",
-        "signature": "eJ62gM33epb5PfTSR9z4CWyckIGaXt5qjSZhHn3qN0Otpu8/wLEtdpY1k35SDAP//rQJ5ZG7mXMV44J+bz2EDA==",
-        "size": 19316
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/ettt-1.3.0.0.tgz",
+        "sha256": "8a3f82bdc21c1989f195d0384a61637b57d4d37b9c6b452765e9c9899ac9364e",
+        "signature": "iR+1gOYG2j5x8qVO1oWmyqOXYEArs7+WvT1HyWQMH+/qw4hvS3TGGcRCwglyag5TbYCCN6jTj2Pcz1RbSiyhCQ==",
+        "size": 69787
       }
     },
     {
@@ -197,11 +197,11 @@
       "name": "Faith Feud",
       "emoji": "⛪",
       "description": "Survey says—guess the top answers.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 12,
       "capabilities": {
-        "bots": false,
+        "bots": true,
         "audience": true,
         "hints": false,
         "restore": true
@@ -219,7 +219,7 @@
         "recommendations": true,
         "recaps": true,
         "moderation": false,
-        "deterministicBots": false
+        "deterministicBots": true
       },
       "rules": {
         "summary": "Faith Feud validates every player action on the server and exposes legal actions without revealing private state.",
@@ -232,10 +232,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/faith-feud-1.2.0.0.tgz",
-        "sha256": "a3c27959bac62e19513639abf47a2d55ea0f2027a28b10307327ec550e1caa22",
-        "signature": "VSjJH6uekVy/gMX/FKbboeaWtbf21QXk+pn4nXoyjtKsW17wOerIOIsXI7m4aHflSI/qHZCFibyY78KhyYJ4CA==",
-        "size": 12770
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/faith-feud-1.3.0.0.tgz",
+        "sha256": "e1ab1adcc8f2638cf42bc806da4a05de1a17d1ed2c18c6714e619af78989f70f",
+        "signature": "pAxoQjpg+deaEUeYbLjkElq5MgwYX14L/w4xa8YNqu8FxiL5suHnvxIoskMqIxwHt7PCBUSSVKP4zm45vltSDA==",
+        "size": 63320
       }
     },
     {
@@ -244,7 +244,7 @@
       "name": "Half & Half",
       "emoji": "✂️",
       "description": "Find the perfect midpoint.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -279,10 +279,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/half-half-1.2.0.0.tgz",
-        "sha256": "1994d15323df63e4729a31ba4806a622ff8a1f88084bdae2f516cc4ad2220b81",
-        "signature": "m8K1TtcHxi6hAnCo8LiAQp4t4ifbrpOEdbr7NYraxLs53smKsZ90JoTGTiLmjRAc1/ELBTmtGo/hIPOxrCijDQ==",
-        "size": 22257
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/half-half-1.3.0.0.tgz",
+        "sha256": "8d1a97c6a5efcbc02f4ea98d5f9713ed5466fe579ac739e6c282632eee090bb1",
+        "signature": "vFAgy6kkOqitpRXn6RDGp8xEg6LOrMtqWsLB0tMZSchdfADkDguLlrnlkS8VdHTamLxf7pYfwW6C3tN8nxPSAg==",
+        "size": 72301
       }
     },
     {
@@ -291,7 +291,7 @@
       "name": "Hustle",
       "emoji": "🪜",
       "description": "Climb come-ups and dodge wahala.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -326,10 +326,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/hustle-1.2.0.0.tgz",
-        "sha256": "ea907c4f34fddfa751b83ba5ebfabb0191d1e480b60b57ef4097bb744c63ef3a",
-        "signature": "N37e04NDbGrpSzJYeiZIfLdpuZ5dphM8O0kg7NfUPozAxgVjrrXpFONPfR1mwdanEw/RDpiBh1y0/Trh3aCjAw==",
-        "size": 28183
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/hustle-1.3.0.0.tgz",
+        "sha256": "0b5362ea4db819a81d6b09719483dc8c1e8da133ee782f78aef24c382b4e7802",
+        "signature": "/DjihyWAQYWz9F3N+frwe8bikXyiGDxIR0g30gMLIt8nE8M4Np94O3NXThTmAY3qlPwbRLRjV/RfjUrEPf3LCw==",
+        "size": 77928
       }
     },
     {
@@ -338,11 +338,11 @@
       "name": "Oga Landlord",
       "emoji": "🏘️",
       "description": "Roll, buy and collect rent across Nigeria.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
-      "maxPlayers": 4,
+      "maxPlayers": 6,
       "capabilities": {
-        "bots": false,
+        "bots": true,
         "audience": true,
         "hints": false,
         "restore": true
@@ -360,7 +360,7 @@
         "recommendations": true,
         "recaps": true,
         "moderation": false,
-        "deterministicBots": false
+        "deterministicBots": true
       },
       "rules": {
         "summary": "Oga Landlord validates every player action on the server and exposes legal actions without revealing private state.",
@@ -373,10 +373,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/landlord-1.2.0.0.tgz",
-        "sha256": "c8a9357a93ccac51654d25d8cfb4467a72b5eaca47652bfc2cfc6fcb2d869b10",
-        "signature": "fpYv5H1+5HWZfkBOFh7YYwu7ZIpG75xAcJdD+QBpcBAh5og5nuMiwIklmocPtPmxMCtXyJu5fNZQw0nNAbWlDw==",
-        "size": 35932
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/landlord-1.3.0.0.tgz",
+        "sha256": "52e01bba2c971afbf9caf6a36e1afcb7ef2e18b9d5a92166c848c3d269f96a4b",
+        "signature": "LAjo1ZtLZtyg7cP7SEzRra7GEkflvXjjc7BsbPTe0ixgsPITT/QGGbluekZzIu0wdsrlpInYNJ2+xPGH6b0BAA==",
+        "size": 84993
       }
     },
     {
@@ -385,7 +385,7 @@
       "name": "Logo Guesser",
       "emoji": "🔎",
       "description": "Identify the brand before time expires.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -420,10 +420,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/logo-1.2.0.0.tgz",
-        "sha256": "9effc1c9b21f36fe18d98a5fe437b831c739eb3e37655fe5248e322950058050",
-        "signature": "Ioejwlrxyz0eUhIYHM5d9tVnqU93J1RfIm9w1lq6Hib5E2wQkQk659z11QgIrDWjPeJt8hFPG9+mWPJb0sQyDQ==",
-        "size": 27138
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/logo-1.3.0.0.tgz",
+        "sha256": "f30a803b0edab4ed122db8b55066a7fa7e70649de3e8b5b8ad159db3251ee3cd",
+        "signature": "O4w4851lLo730LZ1VEVIRYrppwswsYvr2xiERzxQGzN6HW4iDDnkYtaM4G9kTRSH6N2eaElbnTOEHRTV7YRpCw==",
+        "size": 76592
       }
     },
     {
@@ -432,7 +432,7 @@
       "name": "Ludo",
       "emoji": "🎲",
       "description": "The classic race home.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 4,
       "capabilities": {
@@ -467,10 +467,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/ludo-1.2.0.0.tgz",
-        "sha256": "97ac30630835eff02d3befc4ec8ef268733b62d6a0b0f4aa61a9260fc8ec41f4",
-        "signature": "5x42hdw/377BjTQJzSfjrfh35Ig2YUHNZT1frj/DReGOmsPGWXaU1kzl/qID6damOW8yLl+aL3mhHWqYNdOMBA==",
-        "size": 15212
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/ludo-1.3.0.0.tgz",
+        "sha256": "70d37383e4c9a730b22caac3ba82362092531f2abb813371b17437bf32841ae8",
+        "signature": "63ojdO7tCtVusEbcT7FnceWW8OYfeEWGBLRxZSX0XYeNMKD0Uxx6C13wFuI3y+i4EvaqZzA/G0byNd3Gk9EOBg==",
+        "size": 65788
       }
     },
     {
@@ -479,7 +479,7 @@
       "name": "Market Price",
       "emoji": "🛒",
       "description": "Guess the Naija market price.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 1,
       "maxPlayers": 12,
       "capabilities": {
@@ -514,10 +514,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/market-price-1.2.0.0.tgz",
-        "sha256": "cd2b995d3fad51fc1b577d0340b6e893b428e607efe84883cdf5e04086e4113e",
-        "signature": "S77pIPgkKTmml9N01KbpYRgxnBj2tPtB68zjh6VNayGj4csOFs+qeP/YrN4mUqNiOoNIVkRJQZjZuzwYwem8Dg==",
-        "size": 12744
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/market-price-1.3.0.0.tgz",
+        "sha256": "92ec9a5eb31227ffd764f60dedddce9f9dc1df758e6515e293c19c067f2fccc8",
+        "signature": "mlEyHFcMxP5KpJ7x3htbXE2ciA9JRdxLwFm8GL5zgHATG5eT3FTjwRTfPh6ILKy6yE3N5LVZ0xBc7lNIwRpRCA==",
+        "size": 63292
       }
     },
     {
@@ -526,13 +526,14 @@
       "name": "Pidgin Translator",
       "emoji": "🗣️",
       "description": "Translate between English and Pidgin.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 1,
       "maxPlayers": 12,
       "capabilities": {
-        "bots": false,
+        "bots": true,
         "audience": true,
         "hints": false,
+        "voice": true,
         "restore": true
       },
       "entrypoints": {
@@ -548,7 +549,7 @@
         "recommendations": true,
         "recaps": true,
         "moderation": false,
-        "deterministicBots": false
+        "deterministicBots": true
       },
       "rules": {
         "summary": "Pidgin Translator validates every player action on the server and exposes legal actions without revealing private state.",
@@ -561,10 +562,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/pidgin-translator-1.2.0.0.tgz",
-        "sha256": "2c7754f3147448faf556bd20d008d8c6efcf9ace224f484eb63b3b4f8a005a93",
-        "signature": "7T4rAxX+3pnc3xqcLUf308XUOSz2j6OiF1guy60TYlMOX+KRnBMYcfFoY7Zj7IuYkE+u/IWrzgmzIE9G/9PZDg==",
-        "size": 12535
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/pidgin-translator-1.3.0.0.tgz",
+        "sha256": "490da42bb65a9dac54ba5e490c62d5dc58eeb28687ad76d28b319cf26671c6e0",
+        "signature": "CUDyQJvSf0cNvPadgFj6yfDS9uDCl4jm1eD+RrMUINGIFn6ePhX7nOnTMM0kin2VfimpB5h83ZRn0vAWfTy5BA==",
+        "size": 63105
       }
     },
     {
@@ -573,7 +574,7 @@
       "name": "Who Sabi Pass?",
       "emoji": "🇳🇬",
       "description": "Naija culture, history, music and film trivia.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -608,10 +609,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/trivia-1.2.0.0.tgz",
-        "sha256": "b3ec28d17849817a332d0509e3b2120f99c817238fbca36d6e8da531d7a8f1e9",
-        "signature": "58ZP1hPetM4vJ7WzN1ilMXiKWeMKkyTKtOBjIirSy9HBZ4XtE2DZITUssJ3uNqI8DeO808WWGEJA56bhOs8OBQ==",
-        "size": 38819
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/trivia-1.3.0.0.tgz",
+        "sha256": "dc54a90e46e3b047e00319a2667329faa9b942202cb764b145a31140ab7206d3",
+        "signature": "bRLS4gkmx16Gbl5458P+lcG8bCe93P1Z1AxiprnJ/x/yJgErjtlNk4sc+uvA9waYuRvC8VI+41wjcCyfdU98BA==",
+        "size": 88355
       }
     },
     {
@@ -620,7 +621,7 @@
       "name": "Whot",
       "emoji": "🃏",
       "description": "Nigerian shape-and-number showdown.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
       "maxPlayers": 8,
       "capabilities": {
@@ -655,10 +656,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/whot-1.2.0.0.tgz",
-        "sha256": "1fe87b3908b0517e2ae8401995d76628fa0d33403185e3b0c8c967b3a77921d6",
-        "signature": "C2JGd5IiO+ntpYES6rwTuRiX3zeNerPMlje7BCsEM5vHQ10FBAohi2j1G+3uVIRP+JP2IRE93pp18gvrd6DRCw==",
-        "size": 27811
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/whot-1.3.0.0.tgz",
+        "sha256": "d5b8e4afca3b0e6e62ae40fa81388926da987aa513016f57b7ed21cbe4f78e46",
+        "signature": "D+Ofg/vc15PSMBeblcwIYCBpbxZn2sGNubcOhjtlsTekpE+UQPwWoR3VEY45/XuA/QsA9iSm9DSkfPOFXlF8Bg==",
+        "size": 78058
       }
     },
     {
@@ -667,11 +668,11 @@
       "name": "Word Wahala",
       "emoji": "🔤",
       "description": "Naija word-board showdown.",
-      "version": "1.2.0.0",
+      "version": "1.3.0.0",
       "minPlayers": 2,
-      "maxPlayers": 4,
+      "maxPlayers": 8,
       "capabilities": {
-        "bots": false,
+        "bots": true,
         "audience": true,
         "hints": false,
         "restore": true
@@ -689,7 +690,7 @@
         "recommendations": true,
         "recaps": true,
         "moderation": false,
-        "deterministicBots": false
+        "deterministicBots": true
       },
       "rules": {
         "summary": "Word Wahala validates every player action on the server and exposes legal actions without revealing private state.",
@@ -702,10 +703,10 @@
         ]
       },
       "artifact": {
-        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.2.0.0/word-wahala-1.2.0.0.tgz",
-        "sha256": "1a2a78fad6e8c1b9d3c0fb969d1969f4bd27016a2b5950e67b0e24ea1880a55b",
-        "signature": "vfz9YzlxKiYylgjQM9q1PzNcofItLR22izyIEBKoyxkG8NBooGPzvIVM26W6xKifXT378ChDkemvno4f1HxBBA==",
-        "size": 36184
+        "url": "https://github.com/thathman/BoredRoom-Games/releases/download/v1.3.0.0/word-wahala-1.3.0.0.tgz",
+        "sha256": "c8937d0b88f3d5fb5b215daed69f7a67f86490572f64eee615fcfeaf7f4ffbc0",
+        "signature": "A0oxTOEhCa6V8prcvi/fw/THnCe7RYIOAqmLTPjl0MYi5ShRpIX8K3QuOUef1+DvKYOGYV7+zquNp8xOqubWCg==",
+        "size": 85659
       }
     }
   ]
