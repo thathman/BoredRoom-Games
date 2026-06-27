@@ -51,9 +51,11 @@ export class FaithFeudRuntime extends RuntimeBase {
     const s = this.surveys[this.ci];
     return {
       gameType:this.gameType,name:this.manifest.name,emoji:this.manifest.emoji,
-      mode:'challenge',phase:this.phase==='finished'?'finished':'playing',
+      mode:'feud',phase:this.phase==='finished'?'finished':'playing',
       round:this.ci+1,totalRounds:this.totalRounds,
       challenge:s?{kind:'text',prompt:s[0]}:null,
+      totalSlots:s?s[1].length:0, // answer-slot count only — no answer content leaks
+      maxStrikes:this.maxStrikes,
       players:clone(this.players.map(p=>({...p}))),
       submittedCount:Object.keys(this.subs).length,submissions:clone(this.subs),
       revealedAnswers:clone(this.rev),strikes:this.strikes,activeTeam:this.teamId,
