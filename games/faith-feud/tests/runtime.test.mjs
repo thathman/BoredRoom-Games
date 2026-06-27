@@ -84,3 +84,12 @@ test('snapshot/restore preserves board, strikes and tried guesses', () => {
   // The already-tried wrong guess stays a no-op after restore.
   assert.equal(r2.handleIntent('a1', { type: 'answer_text', text: 'a-wrong-guess' }, false), false);
 });
+
+test('ships multiple survey packs with enough rounds', () => {
+  const general = makeFF({ rounds: 5 });
+  assert.ok(general.surveys.length >= 5); // general pack has 6 surveys
+  const church = makeFF({ surveyPack: 'church', rounds: 4 });
+  assert.equal(church.surveys.length, 4);
+  // church pack questions are distinct from general
+  assert.notDeepEqual(church.surveys.map((s) => s[0]).sort(), general.surveys.map((s) => s[0]).sort());
+});

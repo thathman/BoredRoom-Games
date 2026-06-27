@@ -2,22 +2,82 @@
 
 import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
 
-const SURVEY_PACKS = { general: {
-  'Name something you find in a Nigerian kitchen': [
-    { text:'Maggi cube', aliases:['seasoning','knorr','cube','maggi'], points:35 },
-    { text:'Pot', aliases:['saucepan'], points:25 },
-    { text:'Palm oil', aliases:['oil'], points:18 },
-    { text:'Rice', aliases:[], points:12 },
-    { text:'Mortar', aliases:['pestle'], points:10 },
-  ],
-  'What do Lagosians complain about most?': [
-    { text:'Traffic', aliases:['go-slow','jam','hold-up'], points:40 },
-    { text:'NEPA', aliases:['power','electricity','light'], points:30 },
-    { text:'Police', aliases:['checkpoint'], points:15 },
-    { text:'Money', aliases:['expensive','prices'], points:10 },
-    { text:'Rain', aliases:['flooding','water'], points:5 },
-  ],
-}};
+const SURVEY_PACKS = {
+  general: {
+    'Name something you find in a Nigerian kitchen': [
+      { text:'Maggi cube', aliases:['seasoning','knorr','cube','maggi'], points:35 },
+      { text:'Pot', aliases:['saucepan'], points:25 },
+      { text:'Palm oil', aliases:['oil'], points:18 },
+      { text:'Rice', aliases:[], points:12 },
+      { text:'Mortar', aliases:['pestle'], points:10 },
+    ],
+    'What do Lagosians complain about most?': [
+      { text:'Traffic', aliases:['go-slow','jam','hold-up'], points:40 },
+      { text:'NEPA', aliases:['power','electricity','light'], points:30 },
+      { text:'Police', aliases:['checkpoint'], points:15 },
+      { text:'Money', aliases:['expensive','prices'], points:10 },
+      { text:'Rain', aliases:['flooding','water'], points:5 },
+    ],
+    'Name a popular Nigerian food': [
+      { text:'Jollof rice', aliases:['jollof'], points:38 },
+      { text:'Pounded yam', aliases:['poundo','iyan'], points:24 },
+      { text:'Egusi', aliases:['egusi soup'], points:16 },
+      { text:'Suya', aliases:[], points:12 },
+      { text:'Akara', aliases:['bean cake'], points:10 },
+    ],
+    'Name something people do at an owambe': [
+      { text:'Spray money', aliases:['spraying','spray'], points:36 },
+      { text:'Dance', aliases:['dancing'], points:28 },
+      { text:'Eat', aliases:['chop','eating'], points:18 },
+      { text:'Wear aso ebi', aliases:['aso ebi','asoebi'], points:12 },
+      { text:'Take photos', aliases:['snap','pictures'], points:6 },
+    ],
+    'Name a way Nigerians greet elders': [
+      { text:'Kneel', aliases:['kneeling'], points:34 },
+      { text:'Prostrate', aliases:['dobale','lie down'], points:30 },
+      { text:'Bow', aliases:['bowing'], points:18 },
+      { text:'Good morning sir', aliases:['greet','good morning'], points:12 },
+      { text:'Handshake', aliases:['shake hands'], points:6 },
+    ],
+    'Name something you hear in a Lagos danfo': [
+      { text:'Owa o', aliases:['owa','bus stop'], points:34 },
+      { text:'Conductor shouting', aliases:['conductor','shouting'], points:26 },
+      { text:'Enter with your change', aliases:['change','your change'], points:20 },
+      { text:'Music', aliases:['fuji','afrobeats'], points:12 },
+      { text:'Arguments', aliases:['quarrel','fight'], points:8 },
+    ],
+  },
+  church: {
+    'Name something you find in church': [
+      { text:'Bible', aliases:['holy book','scripture'], points:34 },
+      { text:'Choir', aliases:['singers','praise team'], points:26 },
+      { text:'Pulpit', aliases:['altar'], points:16 },
+      { text:'Offering basket', aliases:['offering','collection'], points:14 },
+      { text:'Drums', aliases:['instruments','keyboard'], points:10 },
+    ],
+    'Name a book of the Bible': [
+      { text:'Genesis', aliases:[], points:30 },
+      { text:'Psalms', aliases:['psalm'], points:26 },
+      { text:'John', aliases:['gospel of john'], points:18 },
+      { text:'Matthew', aliases:[], points:14 },
+      { text:'Revelation', aliases:['revelations'], points:12 },
+    ],
+    'Name a fruit of the Spirit': [
+      { text:'Love', aliases:[], points:30 },
+      { text:'Joy', aliases:[], points:24 },
+      { text:'Peace', aliases:[], points:20 },
+      { text:'Patience', aliases:['longsuffering'], points:16 },
+      { text:'Kindness', aliases:['gentleness','goodness'], points:10 },
+    ],
+    'Name something people say to start a prayer': [
+      { text:'Our Father', aliases:['father lord','heavenly father'], points:34 },
+      { text:'In Jesus name', aliases:['jesus name'], points:28 },
+      { text:'Hallelujah', aliases:['halleluyah'], points:18 },
+      { text:'Let us pray', aliases:['pray'], points:12 },
+      { text:'Almighty God', aliases:['almighty'], points:8 },
+    ],
+  },
+};
 
 function matchAnswer(text, answers) {
   const norm = text.toLowerCase().trim();
@@ -32,7 +92,8 @@ export class FaithFeudRuntime extends RuntimeBase {
   start() {
     const seed = Number(this.context?.settings?.seed) || (Date.now()&0xffffffff);
     this.rng = makeRng(seed);
-    this.totalRounds = Math.min(5, Math.max(1, Number(this.context?.settings?.rounds)||3));
+    const pack0 = SURVEY_PACKS[this.context?.settings?.surveyPack||'general']??SURVEY_PACKS.general;
+    this.totalRounds = Math.min(Object.keys(pack0).length, Math.max(1, Number(this.context?.settings?.rounds)||3));
     this.maxStrikes = 3;
     this.steals = this.context?.settings?.steals !== false;
 
