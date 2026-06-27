@@ -2,6 +2,7 @@
   "name": "boredroom-games",
   "private": true,
   "version": "1.4.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "prebuild": "node scripts/sync-word-dictionary.mjs",
