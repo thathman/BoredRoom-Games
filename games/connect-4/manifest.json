@@ -4,7 +4,7 @@
   "name": "Connect 4",
   "emoji": "🔴",
   "description": "Tag-team connect-four showdown.",
-  "version": "1.3.0.0",
+  "version": "1.3.0.1",
   "minPlayers": 2,
   "maxPlayers": 4,
   "capabilities": {

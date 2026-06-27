@@ -4,7 +4,7 @@
   "name": "Bible Timeline Rush",
   "emoji": "📜",
   "description": "Put the events in order, fast.",
-  "version": "1.3.0.0",
+  "version": "1.3.0.1",
   "minPlayers": 1,
   "maxPlayers": 12,
   "capabilities": {

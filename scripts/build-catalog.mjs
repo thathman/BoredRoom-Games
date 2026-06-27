@@ -46,7 +46,7 @@ for (const id of (await readdir(gamesRoot)).sort()) {
   await writeFile(path.join(staging, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(
     path.join(staging, 'source', 'server.js'),
-    `import { createPlugin } from './runtime/game-runtime.js';\nconst manifest = ${JSON.stringify(manifest)};\nexport const gamePlugin = createPlugin(manifest);\nexport default gamePlugin;\n`,
+    `import { createPlugin } from './game-runtime.js';\nconst manifest = ${JSON.stringify(manifest)};\nexport const gamePlugin = createPlugin(manifest);\nexport default gamePlugin;\n`,
   );
   const reproducibleFlags = process.platform === 'linux'
     ? ['--sort=name', '--mtime=@0', '--owner=0', '--group=0', '--numeric-owner']

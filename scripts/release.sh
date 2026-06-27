@@ -4,7 +4,7 @@
 # GitHub Actions is the preferred production path because the matching signing key is held in
 # the repository secret. This local path is for a maintainer who has the production private key:
 #
-#   BOREDROOM_GAMES_SIGNING_KEY="$(cat /path/to/private.pem)" RELEASE_TAG=v1.3.0.0 bash scripts/release.sh
+#   BOREDROOM_GAMES_SIGNING_KEY="$(cat /path/to/private.pem)" RELEASE_TAG=v1.3.0.1 bash scripts/release.sh
 #
 # It runs the full test suite, rebuilds signed artifacts + catalog at RELEASE_TAG, verifies the
 # tarball signatures against the bundled public key, and prints what changed so you can commit,
@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-RELEASE_TAG="${RELEASE_TAG:-v1.3.0.0}"
+RELEASE_TAG="${RELEASE_TAG:-v1.3.0.1}"
 export RELEASE_TAG
 
 if [ -z "${BOREDROOM_GAMES_SIGNING_KEY:-}" ]; then

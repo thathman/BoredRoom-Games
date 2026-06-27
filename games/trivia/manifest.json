@@ -4,7 +4,7 @@
   "name": "Who Sabi Pass?",
   "emoji": "🇳🇬",
   "description": "Naija culture, history, music and film trivia.",
-  "version": "1.3.0.0",
+  "version": "1.3.0.1",
   "minPlayers": 2,
   "maxPlayers": 8,
   "capabilities": {
