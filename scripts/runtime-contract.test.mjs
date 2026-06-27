@@ -30,6 +30,24 @@ for (const id of gameIds) {
     assert.deepEqual(runtime.legalIntents('late-player'), []);
     assert.ok(runtime.legalIntents('p1').length > 0);
 
+    // Projection isolation: a player's private hand/rack tile ids must never appear in the
+    // public or crowd projections that other players can see.
+    const secretIds = [];
+    for (const pid of ['p1', 'p2']) {
+      const priv = runtime.privateState(pid);
+      for (const item of [...(priv.hand ?? []), ...(priv.rack ?? [])]) {
+        if (item && typeof item.id === 'string') secretIds.push(item.id);
+      }
+    }
+    if (secretIds.length > 0) {
+      const publicJson = JSON.stringify(runtime.publicState());
+      const crowdJson = JSON.stringify(runtime.crowdState ? runtime.crowdState() : runtime.publicState());
+      for (const secret of secretIds) {
+        assert.equal(publicJson.includes(secret), false, `${id}: public state leaked private tile ${secret}`);
+        assert.equal(crowdJson.includes(secret), false, `${id}: crowd state leaked private tile ${secret}`);
+      }
+    }
+
     const legal = runtime.legalIntents('p1')[0];
     const intent = legal.type === 'guess'
       ? { ...legal, amount: Number.isFinite(Number(legal.amount)) ? Number(legal.amount) : 1000 }
