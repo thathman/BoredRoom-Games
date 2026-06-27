@@ -44,6 +44,11 @@ export class LogoGuesserRuntime extends RuntimeBase {
 
     let pool = LOGO_BANK;
     if (category !== 'all') pool = LOGO_BANK.filter((l) => l.category.toLowerCase() === category.toLowerCase());
+    // Merge AI-generated brands (server-validated) ahead of the local bank; local bank is the
+    // fail-soft fallback so the game works offline.
+    const aiLogos = Array.isArray(this.context?.settings?.aiLogos) ? this.context.settings.aiLogos : [];
+    const validLogos = aiLogos.filter((l) => l && typeof l.name === 'string' && typeof l.hint === 'string');
+    if (validLogos.length) pool = [...validLogos.map((l) => ({ ...l, category: l.category ?? 'Brands' })), ...pool];
     this.questions = deprioritizeRecent(shuffleInPlace(clone(pool), rng), this.context?.settings?.avoidPrompts, (q) => q.name).slice(0, this.questionCount);
     this.currentIndex = 0;
     this.currentStage = 0;

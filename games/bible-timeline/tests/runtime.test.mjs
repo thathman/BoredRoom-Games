@@ -143,3 +143,15 @@ test('snapshot and restore preserves submissions', () => {
   assert.equal(b.publicState().round, a.publicState().round);
   assert.equal(b.publicState().submittedCount, a.publicState().submittedCount);
 });
+
+test('merges AI-generated events into the ordering bank, with fallback', () => {
+  const r = makeTimeline({ aiEvents: [
+    { event: 'AI: The Exodus from Egypt', position: 250 },
+    { event: 'AI: Building of Solomon temple', position: 450 },
+    { event: 'AI: Babylonian exile', position: 600 },
+  ], questionCount: 5 });
+  const allEvents = r.publicState().challenge.options;
+  assert.ok(Array.isArray(allEvents) && allEvents.length === 5);
+  const noai = makeTimeline({ questionCount: 4 });
+  assert.equal(noai.publicState().challenge.options.length, 4); // fallback
+});

@@ -93,7 +93,12 @@ export class BibleTimelineRuntime extends RuntimeBase {
   }
 
   prepareRound() {
-    const bank = EVENT_BANKS[this.contentSet] ?? EVENT_BANKS.old_testament;
+    let bank = EVENT_BANKS[this.contentSet] ?? EVENT_BANKS.old_testament;
+    // Merge AI-generated events (server-validated) into the bank; local bank is the fail-soft
+    // fallback. Each AI event needs an event label and a chronological position.
+    const aiEvents = Array.isArray(this.context?.settings?.aiEvents) ? this.context.settings.aiEvents : [];
+    const validEvents = aiEvents.filter((e) => e && typeof e.event === 'string' && Number.isFinite(e.position));
+    if (validEvents.length) bank = [...validEvents, ...bank];
     // Pick random events — not the first N which are always correct. Sink session-recent events
     // to the back first so consecutive rounds/plays avoid repeating the same set.
     const ordered = deprioritizeRecent(shuffleInPlace(clone(bank), this.rng), this.context?.settings?.avoidPrompts, (e) => e.event);

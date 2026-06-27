@@ -55,3 +55,13 @@ test('snapshot/restore preserves questions, index and stage', () => {
   r2.restore(snap);
   assert.deepEqual(r2.publicState(), r.publicState());
 });
+
+test('merges AI-generated brands ahead of the local bank, with fallback', () => {
+  // Several AI brands so at least some land in the (capped) question set regardless of shuffle.
+  const aiLogos = ['Jumia', 'Bolt', 'Konga', 'Paystack', 'GIGM', 'Filmhouse'].map((name) => ({ name, hint: 'Naija brand', category: 'Tech' }));
+  const r = makeLogo({ aiLogos, questionCount: 15 });
+  const names = r.questions.map((q) => q.name);
+  assert.ok(aiLogos.some((l) => names.includes(l.name)), 'expected at least one AI brand in the set');
+  const noai = makeLogo({ questionCount: 6 });
+  assert.equal(noai.questions.length, 6); // local bank fallback
+});
