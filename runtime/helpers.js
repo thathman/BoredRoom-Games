@@ -127,3 +127,17 @@ export class RuntimeBase {
     return { mode: this.state?.mode, scores: this.players.map(({ id, score }) => ({ playerId: id, score })) };
   }
 }
+
+// Reorder a content pool so items whose `key` was recently used (in avoidPrompts) sink to the
+// end. Reduces repeats across a session without ever dropping items (so the game can't run dry).
+export function deprioritizeRecent(pool, avoidPrompts, keyOf) {
+  if (!Array.isArray(avoidPrompts) || avoidPrompts.length === 0) return pool;
+  const recent = new Set(avoidPrompts.map((p) => String(p).toLowerCase().trim()));
+  const fresh = [];
+  const stale = [];
+  for (const item of pool) {
+    const k = String(keyOf(item) ?? '').toLowerCase().trim();
+    (recent.has(k) ? stale : fresh).push(item);
+  }
+  return [...fresh, ...stale];
+}

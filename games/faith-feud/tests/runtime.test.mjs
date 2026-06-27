@@ -93,3 +93,14 @@ test('ships multiple survey packs with enough rounds', () => {
   // church pack questions are distinct from general
   assert.notDeepEqual(church.surveys.map((s) => s[0]).sort(), general.surveys.map((s) => s[0]).sort());
 });
+
+test('merges AI-generated surveys ahead of the local packs, with fallback', () => {
+  const ai = [{ question: 'AI: Name a Nigerian city', answers: [
+    { text: 'Lagos', points: 40 }, { text: 'Abuja', points: 30 }, { text: 'Kano', points: 20 }, { text: 'Ibadan', points: 10 },
+  ] }];
+  const r = makeFF({ aiSurveys: ai, rounds: 10 });
+  assert.ok(r.surveys.some((s) => s[0] === 'AI: Name a Nigerian city')); // AI survey used
+  // Without AI, falls back to local packs.
+  const noai = makeFF({ rounds: 3 });
+  assert.equal(noai.surveys.length, 3);
+});

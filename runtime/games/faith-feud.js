@@ -92,13 +92,18 @@ export class FaithFeudRuntime extends RuntimeBase {
   start() {
     const seed = Number(this.context?.settings?.seed) || (Date.now()&0xffffffff);
     this.rng = makeRng(seed);
-    const pack0 = SURVEY_PACKS[this.context?.settings?.surveyPack||'general']??SURVEY_PACKS.general;
-    this.totalRounds = Math.min(Object.keys(pack0).length, Math.max(1, Number(this.context?.settings?.rounds)||3));
+    const pack = SURVEY_PACKS[this.context?.settings?.surveyPack||'general']??SURVEY_PACKS.general;
+    // Merge AI-generated surveys (server-validated) ahead of the local pack; local pack is the
+    // fail-soft fallback so the game always has enough surveys offline.
+    const aiSurveys = Array.isArray(this.context?.settings?.aiSurveys) ? this.context.settings.aiSurveys : [];
+    const aiEntries = aiSurveys
+      .filter((s) => s && typeof s.question === 'string' && Array.isArray(s.answers) && s.answers.length >= 3)
+      .map((s) => [s.question, s.answers.map((a) => ({ text: a.text, aliases: a.aliases ?? [], points: a.points }))]);
+    const allEntries = [...aiEntries, ...Object.entries(pack)];
     this.maxStrikes = 3;
     this.steals = this.context?.settings?.steals !== false;
-
-    const pack = SURVEY_PACKS[this.context?.settings?.surveyPack||'general']??SURVEY_PACKS.general;
-    this.surveys = shuffleInPlace(clone(Object.entries(pack)),this.rng).slice(0,this.totalRounds);
+    this.totalRounds = Math.min(allEntries.length, Math.max(1, Number(this.context?.settings?.rounds)||3));
+    this.surveys = shuffleInPlace(clone(allEntries),this.rng).slice(0,this.totalRounds);
     this.ci = 0; this.rev = []; this.strikes=0; this.stealA=false; this.phase='faceoff';
     this.team1=this.players.slice(0,Math.ceil(this.players.length/2));
     this.team2=this.players.slice(Math.ceil(this.players.length/2));

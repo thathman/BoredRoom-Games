@@ -10,7 +10,7 @@
 //   timer (number, default 30) — seconds per round
 //   seed (number, optional)
 
-import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
+import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers, deprioritizeRecent } from '../helpers.js';
 
 const EVENT_BANKS = {
   old_testament: [
@@ -94,8 +94,10 @@ export class BibleTimelineRuntime extends RuntimeBase {
 
   prepareRound() {
     const bank = EVENT_BANKS[this.contentSet] ?? EVENT_BANKS.old_testament;
-    // Pick random events — not the first N which are always correct
-    const pool = shuffleInPlace(clone(bank), this.rng).slice(0, this.questionCount);
+    // Pick random events — not the first N which are always correct. Sink session-recent events
+    // to the back first so consecutive rounds/plays avoid repeating the same set.
+    const ordered = deprioritizeRecent(shuffleInPlace(clone(bank), this.rng), this.context?.settings?.avoidPrompts, (e) => e.event);
+    const pool = ordered.slice(0, this.questionCount);
     pool.sort((a, b) => a.position - b.position); // canonical order
     this.currentCanonical = pool.map((e) => ({
       event: e.event,

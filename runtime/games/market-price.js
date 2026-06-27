@@ -1,6 +1,6 @@
 // Market Price — Nigerian price estimation game with cached product snapshots.
 
-import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
+import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers, deprioritizeRecent } from '../helpers.js';
 
 const CURATED_PRODUCTS = [
   { name: '50kg bag of rice (local)', category: 'Food', unit: '50kg bag', price: 45000, range: 5000 },
@@ -36,7 +36,7 @@ export class MarketPriceRuntime extends RuntimeBase {
 
     let pool = CURATED_PRODUCTS;
     if (category !== 'all') pool = CURATED_PRODUCTS.filter((p) => p.category.toLowerCase() === category.toLowerCase());
-    this.questions = shuffleInPlace(clone(pool), rng).slice(0, this.questionCount);
+    this.questions = deprioritizeRecent(shuffleInPlace(clone(pool), rng), this.context?.settings?.avoidPrompts, (q) => q.name).slice(0, this.questionCount);
     this.currentIndex = 0;
 
     this.state = {

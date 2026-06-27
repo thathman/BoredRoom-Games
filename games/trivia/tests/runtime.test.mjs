@@ -74,3 +74,32 @@ test('snapshot/restore preserves questions, index and seed', () => {
   assert.deepEqual(r2.publicState(), r.publicState());
   assert.equal(r2.seed, r.seed);
 });
+
+test('merges AI-generated questions ahead of the local bank, validating them', () => {
+  const ai = [
+    { prompt: 'AI: Capital of Lagos State?', options: ['Ikeja', 'Lagos Island', 'Epe', 'Badagry'], answer: 0, explanation: 'Ikeja is the capital.' },
+    { prompt: 'Bad AI question', options: ['only one'], answer: 0 }, // invalid: <2 options, dropped
+    { prompt: 'Bad index', options: ['a', 'b'], answer: 5 }, // invalid index, dropped
+  ];
+  const r = makeTrivia({ aiQuestions: ai, questionCount: 10 });
+  const prompts = r.questions.map((q) => q.prompt);
+  assert.ok(prompts.includes('AI: Capital of Lagos State?')); // valid AI question used
+  assert.ok(!prompts.includes('Bad AI question')); // invalid dropped
+  assert.ok(!prompts.includes('Bad index'));
+});
+
+test('falls back to the local bank when no AI questions are supplied', () => {
+  const r = makeTrivia({ questionCount: 8 });
+  assert.equal(r.questions.length, 8); // still fully populated from the local bank
+});
+
+test('avoidPrompts sinks recently-used questions to the back of the pool', () => {
+  // Build once with no avoid to learn which prompts the seed picks first.
+  const base = makeTrivia({ questionCount: 4, seed: 11 });
+  const firstFour = base.questions.map((q) => q.prompt);
+  // Now mark those as recently used; a fresh run with the same seed should avoid them up front.
+  const next = makeTrivia({ questionCount: 4, seed: 11, avoidPrompts: firstFour });
+  const overlap = next.questions.map((q) => q.prompt).filter((p) => firstFour.includes(p));
+  // With a bank larger than 4, the avoided ones should be pushed back (fewer than 4 overlap).
+  assert.ok(overlap.length < firstFour.length);
+});

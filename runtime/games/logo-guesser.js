@@ -1,7 +1,7 @@
 // Logo Guesser — progressive reveal logo recognition game.
 // Categories, blur/crop/pixelate/mask reveal stages, typed or multiple choice.
 
-import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
+import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers, deprioritizeRecent } from '../helpers.js';
 
 const LOGO_BANK = [
   { name: 'Nike', hint: 'Just Do It', category: 'Sports' },
@@ -44,7 +44,7 @@ export class LogoGuesserRuntime extends RuntimeBase {
 
     let pool = LOGO_BANK;
     if (category !== 'all') pool = LOGO_BANK.filter((l) => l.category.toLowerCase() === category.toLowerCase());
-    this.questions = shuffleInPlace(clone(pool), rng).slice(0, this.questionCount);
+    this.questions = deprioritizeRecent(shuffleInPlace(clone(pool), rng), this.context?.settings?.avoidPrompts, (q) => q.name).slice(0, this.questionCount);
     this.currentIndex = 0;
     this.currentStage = 0;
 

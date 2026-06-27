@@ -7,7 +7,7 @@
 //   timer (number, default 15)
 //   seed (number, optional)
 
-import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
+import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers, deprioritizeRecent } from '../helpers.js';
 
 const QUESTION_BANK = {
   culture: [
@@ -58,9 +58,19 @@ export class WhoSabiPassRuntime extends RuntimeBase {
     }
     if (pool.length === 0) pool = Object.values(QUESTION_BANK).flat();
 
-    // Shuffle the option order per question and remap the answer index — the bank stores the
-    // correct option first, so without this a player could always pick option 0 and win.
-    this.questions = shuffleInPlace(clone(pool), rng).slice(0, this.questionCount).map((q) => {
+    // Merge AI-generated questions (server-validated) ahead of the local bank when provided.
+    // The local bank is always the fail-soft fallback, so the game works with no AI/network.
+    const aiQuestions = Array.isArray(this.context?.settings?.aiQuestions) ? this.context.settings.aiQuestions : [];
+    const valid = aiQuestions.filter((q) => q && typeof q.prompt === 'string' && Array.isArray(q.options)
+      && Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length);
+    if (valid.length) pool = [...valid, ...pool];
+
+    // Shuffle, then sink session-recent prompts to the back so a long night keeps fresh questions.
+    let ordered = shuffleInPlace(clone(pool), rng);
+    ordered = deprioritizeRecent(ordered, this.context?.settings?.avoidPrompts, (q) => q.prompt);
+    // Map the answer index after shuffling options — the bank stores the correct option first,
+    // so without this a player could always pick option 0 and win.
+    this.questions = ordered.slice(0, this.questionCount).map((q) => {
       const correctText = q.options[q.answer];
       const options = shuffleInPlace([...q.options], rng);
       return { ...q, options, answer: options.indexOf(correctText) };
