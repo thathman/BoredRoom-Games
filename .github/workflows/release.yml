@@ -20,9 +20,30 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
           BOREDROOM_GAMES_SIGNING_KEY: ${{ secrets.BOREDROOM_GAMES_SIGNING_KEY }}
         run: npm run build
-      - name: Verify catalog
+      - name: Run runtime and catalog tests
         run: npm test
+      - name: Verify signed release
+        run: node scripts/verify-release.mjs
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" dist/*.tgz --title "${GITHUB_REF_NAME}" --generate-notes
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/*.tgz catalog.json \
+            --title "${GITHUB_REF_NAME}" --generate-notes
+      - name: Publish catalog to main
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cp catalog.json "${RUNNER_TEMP}/catalog.json"
+          git fetch origin main
+          git switch -C main origin/main
+          cp "${RUNNER_TEMP}/catalog.json" catalog.json
+          if git diff --quiet -- catalog.json; then
+            echo "Catalog already points to ${RELEASE_TAG}."
+            exit 0
+          fi
+          git config user.name "Hendrix Nwaokolo"
+          git config user.email "n.hendrix.e@gmail.com"
+          git add catalog.json
+          git commit -m "Release ${RELEASE_TAG} signed game catalog"
+          git push origin HEAD:main
