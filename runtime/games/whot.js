@@ -12,10 +12,11 @@
 // Settings:
 //   specialCards (bool, default true) — enable/disable special card effects
 //   enableDirection (bool, default false) — card 11 acts as Reverse
-//   maxRounds (number, default 0) — 0 = single round, >0 = multi-round game
+//   A match is always best-of-five: first to three round wins, or the leader
+//   after round five. Pip totals are retained as a tie-break and recap signal.
 //   seed (number, optional) — deterministic shuffle seed
 
-import { RuntimeBase, makeRng, shuffleInPlace, clone, topPlayers } from '../helpers.js';
+import { RuntimeBase, makeRng, shuffleInPlace, clone } from '../helpers.js';
 
 export const WHOT_SHAPES = ['Circle', 'Triangle', 'Cross', 'Square', 'Star'];
 
@@ -51,7 +52,8 @@ export class WhotRuntime extends RuntimeBase {
     const seed = Number(this.context?.settings?.seed) || (Date.now() & 0xffffffff);
     this.specialsOn = this.context?.settings?.specialCards !== false;
     this.directionEnabled = this.context?.settings?.enableDirection === true;
-    this.maxRounds = Number(this.context?.settings?.maxRounds) || 0;
+    this.maxRounds = 5;
+    this.roundsToWin = 3;
     this.direction = 1;
 
     const rng = makeRng(seed);
@@ -70,7 +72,13 @@ export class WhotRuntime extends RuntimeBase {
       emoji: this.manifest.emoji,
       mode: 'whot',
       phase: 'playing',
-      players: clone(this.players.map((p) => ({ ...p, handCount: hands[p.id]?.length ?? 0 }))),
+      players: clone(this.players.map((p) => ({
+        ...p,
+        score: 0,
+        roundWins: 0,
+        pipScore: 0,
+        handCount: hands[p.id]?.length ?? 0,
+      }))),
       topCard,
       requestedShape: null,
       drawPileCount: deck.length,
@@ -78,7 +86,11 @@ export class WhotRuntime extends RuntimeBase {
       pendingPick: 0,
       pendingPickRank: null,
       round: 1,
-      totalRounds: this.maxRounds || 1,
+      totalRounds: this.maxRounds,
+      roundsToWin: this.roundsToWin,
+      roundWins: Object.fromEntries(this.players.map((player) => [player.id, 0])),
+      callout: null,
+      calloutSequence: 0,
       roundScores: [],
       winnerPlayerIds: [],
       lastAction: `Top card is ${topCard.label}.`,
@@ -122,11 +134,14 @@ export class WhotRuntime extends RuntimeBase {
     }
 
     const player = this.players.find((c) => c.id === playerId);
+    const remainingCards = this.hands[playerId].length;
     if (this.hands[playerId].length === 0) {
+      this.announceCardCount(playerId, remainingCards);
       this.endRound(player);
       return true;
     }
     this.applySpecial(card, player);
+    this.announceCardCount(playerId, remainingCards);
     this.updateHandCounts();
     return true;
   }
@@ -219,7 +234,10 @@ export class WhotRuntime extends RuntimeBase {
       if (p.id === player.id) return sum;
       return sum + (this.hands[p.id] ?? []).reduce((s, c) => s + c.number, 0);
     }, 0);
-    player.score += Math.max(1, pipsLeft);
+    player.score += 1;
+    player.roundWins = (player.roundWins ?? 0) + 1;
+    player.pipScore = (player.pipScore ?? 0) + Math.max(1, pipsLeft);
+    this.state.roundWins[player.id] = player.roundWins;
     this.updateHandCounts();
     this.state.roundScores = this.players.map((p) => ({
       playerId: p.id,
@@ -227,24 +245,26 @@ export class WhotRuntime extends RuntimeBase {
       pips: (this.hands[p.id] ?? []).reduce((s, c) => s + c.number, 0),
     }));
 
-    if (this.maxRounds > 0 && this.state.round >= this.maxRounds) {
+    const clinched = player.roundWins >= this.roundsToWin;
+    if (clinched || this.state.round >= this.maxRounds) {
       this.state.phase = 'finished';
-      this.state.winnerPlayerIds = topPlayers(this.players);
+      this.state.winnerPlayerIds = this.matchWinners();
       const winner = this.players.find((p) => p.id === this.state.winnerPlayerIds[0]);
       this.state.lastAction = this.state.winnerPlayerIds.length > 1
         ? `Round ${this.state.round} ends. Game is a draw!`
-        : `${player.name} wins round ${this.state.round}. ${winner?.name} wins the game!`;
+        : `${player.name} calls check up and wins round ${this.state.round}. ${winner?.name} wins the best-of-five match!`;
     } else {
       this.state.phase = 'round_end';
       this.state.winnerPlayerIds = [player.id];
-      this.state.lastAction = `${player.name} finished their hand and wins round ${this.state.round}.`;
+      this.state.lastAction = `${player.name} calls check up and wins round ${this.state.round}.`;
     }
+    this.updateHandCounts();
   }
 
   advanceRound() {
-    if (this.maxRounds > 0 && this.state.round >= this.maxRounds) {
+    if (this.state.round >= this.maxRounds) {
       this.state.phase = 'finished';
-      this.state.winnerPlayerIds = topPlayers(this.players);
+      this.state.winnerPlayerIds = this.matchWinners();
       this.state.lastAction = this.state.winnerPlayerIds.length > 1
         ? 'Game ends in a draw!'
         : `${this.players.find((p) => p.id === this.state.winnerPlayerIds[0])?.name} wins the game!`;
@@ -308,7 +328,40 @@ export class WhotRuntime extends RuntimeBase {
       ...player,
       handCount: this.hands[player.id]?.length ?? 0,
       score: this.players.find((p) => p.id === player.id)?.score ?? player.score,
+      roundWins: this.players.find((p) => p.id === player.id)?.roundWins ?? player.roundWins ?? 0,
+      pipScore: this.players.find((p) => p.id === player.id)?.pipScore ?? player.pipScore ?? 0,
     }));
+  }
+
+  announceCardCount(playerId, remainingCards) {
+    const playerName = this.playerName(playerId);
+    const kind = remainingCards === 2
+      ? 'semi_last_card'
+      : remainingCards === 1
+        ? 'last_card'
+        : remainingCards === 0
+          ? 'check_up'
+          : null;
+    if (!kind) return;
+    const text = kind === 'semi_last_card'
+      ? `${playerName}: semi last card!`
+      : kind === 'last_card'
+        ? `${playerName}: last card!`
+        : `${playerName}: check up!`;
+    this.state.calloutSequence = (this.state.calloutSequence ?? 0) + 1;
+    this.state.callout = { kind, playerId, playerName, text, sequence: this.state.calloutSequence };
+    if (remainingCards > 0) this.state.lastAction = text;
+  }
+
+  matchWinners() {
+    const ranked = [...this.players].sort((a, b) =>
+      (b.roundWins ?? 0) - (a.roundWins ?? 0) || (b.pipScore ?? 0) - (a.pipScore ?? 0),
+    );
+    const leader = ranked[0];
+    if (!leader) return [];
+    return ranked
+      .filter((player) => (player.roundWins ?? 0) === (leader.roundWins ?? 0) && (player.pipScore ?? 0) === (leader.pipScore ?? 0))
+      .map((player) => player.id);
   }
 
   publicState() { return clone(this.state); }
@@ -355,7 +408,7 @@ export class WhotRuntime extends RuntimeBase {
   recapSignals() {
     return {
       mode: 'whot',
-      scores: this.players.map(({ id, score }) => ({ playerId: id, score })),
+      scores: this.players.map(({ id, score, roundWins, pipScore }) => ({ playerId: id, score, roundWins, pipScore })),
       roundScores: this.state?.roundScores ?? [],
       round: this.state?.round ?? 1,
       totalRounds: this.state?.totalRounds ?? 1,
@@ -372,6 +425,7 @@ export class WhotRuntime extends RuntimeBase {
       directionEnabled: this.directionEnabled,
       direction: this.direction,
       maxRounds: this.maxRounds,
+      roundsToWin: this.roundsToWin,
     };
   }
 
@@ -383,6 +437,7 @@ export class WhotRuntime extends RuntimeBase {
     this.specialsOn = extra?.specialsOn ?? true;
     this.directionEnabled = extra?.directionEnabled ?? false;
     this.direction = extra?.direction ?? 1;
-    this.maxRounds = extra?.maxRounds ?? 0;
+    this.maxRounds = extra?.maxRounds ?? 5;
+    this.roundsToWin = extra?.roundsToWin ?? 3;
   }
 }

@@ -375,20 +375,22 @@ test('playing last card ends the round', () => {
   assert.deepEqual(runtime.state.winnerPlayerIds, ['p1']);
 });
 
-test('round winner gets pips from opponents remaining cards', () => {
+test('round winner gets one match point and retains pip total as a tie-break', () => {
   const runtime = makeWhot();
   setHands(runtime, [['Circle', 3]], [['Triangle', 4]]);
   runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
   runtime.state.currentPlayerId = 'p1';
   runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false);
-  // p2 had Triangle 4 = 4 pips
-  assert.ok(runtime.publicState().players.find((p) => p.id === 'p1').score >= 4);
+  const winner = runtime.publicState().players.find((p) => p.id === 'p1');
+  assert.equal(winner.score, 1);
+  assert.equal(winner.roundWins, 1);
+  assert.equal(winner.pipScore, 4);
 });
 
 // ── Multi-round ──────────────────────────────────────────────────────────
 
-test('multi-round game advances rounds', () => {
-  const runtime = makeWhot({ maxRounds: 3 });
+test('best-of-five match advances rounds', () => {
+  const runtime = makeWhot();
   // Round 1: p1 wins
   setHands(runtime, [['Circle', 3]], [['Triangle', 10, 12, 14]]);
   runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
@@ -399,6 +401,40 @@ test('multi-round game advances rounds', () => {
   assert.equal(runtime.handleIntent('p1', { type: 'advance' }, true), true);
   assert.equal(runtime.state.round, 2);
   assert.equal(runtime.state.phase, 'playing');
+  assert.equal(runtime.state.totalRounds, 5);
+  assert.equal(runtime.state.roundsToWin, 3);
+});
+
+test('automatically calls semi last card, last card and check up', () => {
+  const runtime = makeWhot();
+  setHands(runtime, [['Circle', 3], ['Circle', 7], ['Circle', 10]], [['Triangle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 12, label: 'Circle 12', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+
+  runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false);
+  assert.equal(runtime.state.callout.kind, 'semi_last_card');
+  runtime.state.currentPlayerId = 'p1';
+  runtime.handleIntent('p1', { type: 'play_card', cardId: 'h1' }, false);
+  assert.equal(runtime.state.callout.kind, 'last_card');
+  runtime.state.currentPlayerId = 'p1';
+  runtime.handleIntent('p1', { type: 'play_card', cardId: 'h2' }, false);
+  assert.equal(runtime.state.callout.kind, 'check_up');
+  assert.equal(runtime.state.phase, 'round_end');
+});
+
+test('first player to three round wins clinches the best-of-five match', () => {
+  const runtime = makeWhot();
+  for (let round = 1; round <= 3; round += 1) {
+    setHands(runtime, [['Circle', 3]], [['Triangle', 4]]);
+    runtime.state.topCard = { id: `t${round}`, shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+    runtime.state.currentPlayerId = 'p1';
+    runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false);
+    if (round < 3) runtime.handleIntent('p1', { type: 'advance' }, true);
+  }
+  assert.equal(runtime.state.phase, 'finished');
+  assert.equal(runtime.state.round, 3);
+  assert.equal(runtime.state.roundWins.p1, 3);
+  assert.deepEqual(runtime.state.winnerPlayerIds, ['p1']);
 });
 
 // ── Finish / game end ────────────────────────────────────────────────────

@@ -1,2 +1,3 @@
 dist/
 .signing/
+.DS_Store
