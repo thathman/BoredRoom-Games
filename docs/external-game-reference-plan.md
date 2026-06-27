@@ -57,3 +57,14 @@ This repo must use a fork/adapt-first strategy for official games. Do not invent
 - Survey/Family Feud web games with explicit MIT/BSD/Apache license.
 - Bible timeline content with explicit reuse license.
 - Pidgin/Nigerian phrase datasets with explicit reuse license.
+
+## Reconciliation status (Claude continuation, 2026-06-27)
+
+Reference repos cloned to a scratch area and audited against the BoredRoom runtimes:
+
+- **Whot ← mykeels/whot (MIT):** BoredRoom's Whot runtime is **rule-identical** to the reference — same 54-card deck (Circle/Triangle 1–14 minus 6,9; Cross/Square subset; Star 1–8; 5× Whot-20) and the same special-move mapping (2=PickTwo, 5=PickThree, 14=GeneralMarket, 1=HoldOn, 8=Suspension, 20=Whot call-shape). Implemented independently but validated against the source of truth. Attribution noted in the runtime.
+- **Oga Landlord ← christelbuchanan/Monopoly-Game (author permission; no LICENSE file):** rules reimplemented server-side (no code vendored). Reconciled the feature target by adding the two missing behaviors: passing-GO bonus and three-doubles→jail. Board animations (3D dice roll, token glide, card flip) adapted into `src/index.css` (`landlord-*`) in the main app with attribution. Runtime now has monopoly sets/houses/mortgage/jail.
+- **Faith Feud ← joshzcold/Friendly-Feud (MIT):** sound effects vendored into `boredroom/public/sounds/feud/` with `ATTRIBUTION.txt` and wired to reveal/correct/wrong/steal. Full host/buzzer UI port still pending.
+- **Connect 4 ← joshtom/connect-four-game (ISC):** audited; BoredRoom's server-authoritative team-mode/best-of implementation kept (reference is client-only). No code vendored.
+
+Scratch clones live outside the repos (not committed). Assets that were vendored carry license attribution alongside them.
