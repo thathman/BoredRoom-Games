@@ -92,3 +92,75 @@ test('snapshot/restore preserves cash, positions, properties and the wahala deck
   assert.deepEqual(r2.publicState(), r.publicState());
   assert.deepEqual(r2.properties, r.properties);
 });
+
+test('owning a full colour set doubles the base rent', () => {
+  const r = makeLL();
+  // Market set is indexes 1 and 3 (Mile 12, Alaba), rent 400 each.
+  r.properties.p2 = [1, 3];
+  r.positions.p2 = 0;
+  r.state.currentPlayerId = 'p1';
+  forceRoll(r, 1); // p1 -> index 1, owned by p2 with full set
+  r.handleIntent('p1', { type: 'roll' }, false);
+  assert.equal(r.privateState('p1').cash, 50000 - 800); // 400 * 2 monopoly bonus
+});
+
+test('building a house increases rent and costs cash', () => {
+  const r = makeLL();
+  r.properties.p1 = [1, 3]; // full market set
+  r.state.currentPlayerId = 'p1';
+  // buy_house should be a legal management intent
+  const houseIntent = r.legalIntents('p1').find((i) => i.type === 'buy_house' && i.position === 1);
+  assert.ok(houseIntent);
+  assert.equal(r.handleIntent('p1', { type: 'buy_house', position: 1 }, false), true);
+  assert.equal(r.publicState().houses['1'], 1);
+  assert.equal(r.privateState('p1').cash, 50000 - 3000); // house cost = price/2 = 3000
+  // rent now: 400 base * 2 set * (1 + 1 house) = 1600
+  assert.equal(r.rentFor(1), 1600);
+});
+
+test('mortgaging raises cash and suspends rent; unmortgage restores it', () => {
+  const r = makeLL();
+  r.properties.p1 = [1];
+  r.state.currentPlayerId = 'p1';
+  assert.equal(r.handleIntent('p1', { type: 'mortgage', position: 1 }, false), true);
+  assert.equal(r.privateState('p1').cash, 50000 + 3000); // +price/2
+  assert.equal(r.rentFor(1), 0); // mortgaged = no rent
+  assert.equal(r.handleIntent('p1', { type: 'unmortgage', position: 1 }, false), true);
+  assert.equal(r.rentFor(1), 400);
+});
+
+test('a jail wahala card jails the player; paying bail frees them', () => {
+  const r = makeLL();
+  r.state.currentPlayerId = 'p1';
+  r.wahalaDeck = [{ text: 'Police!', effect: 'jail' }];
+  r.wahalaIndex = 0;
+  forceRoll(r, 2); // index 2 = Wahala Card
+  r.handleIntent('p1', { type: 'roll' }, false);
+  assert.equal(r.publicState().jail.p1 > 0, true);
+  assert.equal(r.publicState().positions.p1, 10); // moved to Police Holding
+  // Back on p1's turn: pay bail
+  r.state.currentPlayerId = 'p1';
+  const bail = r.legalIntents('p1').find((i) => i.type === 'pay_bail');
+  assert.ok(bail);
+  assert.equal(r.handleIntent('p1', { type: 'pay_bail' }, false), true);
+  assert.equal(r.publicState().jail.p1, 0);
+  assert.equal(r.privateState('p1').cash, 50000 - 5000);
+});
+
+test('houses, mortgages and jail survive snapshot/restore', () => {
+  const r = makeLL();
+  r.properties.p1 = [1, 3];
+  r.state.currentPlayerId = 'p1';
+  r.handleIntent('p1', { type: 'buy_house', position: 1 }, false);
+  r.jail.p2 = 2;
+  r.updatePlayerCash();
+  const snap = r.snapshot();
+  const r2 = new LandlordRuntime({ id: 'landlord', name: 'Oga Landlord', emoji: '🏠', version: '1.2.0.0', minPlayers: 2, maxPlayers: 6, capabilities: { bots: true, audience: true, hints: false, restore: true } });
+  r2.configure({ sessionId: 's', gameRunId: 'r', settings: {} });
+  r2.seatPlayers([]);
+  r2.start();
+  r2.restore(snap);
+  assert.equal(r2.houses['1'], 1);
+  assert.equal(r2.jail.p2, 2);
+  assert.deepEqual(r2.publicState(), r.publicState());
+});

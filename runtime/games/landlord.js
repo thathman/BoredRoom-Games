@@ -14,7 +14,7 @@ const BOARD_CELLS = [
   { name: 'Wahala Card', type: 'chance' },
   { name: 'Wuse Market', type: 'property', price: 12000, rent: 800, set: 'tech' },
   { name: 'Surulere', type: 'property', price: 14000, rent: 1000, set: 'estate' },
-  { name: 'Parking Fee', type: 'penalty', amount: 1000 },
+  { name: 'Police Holding', type: 'jail' },
   { name: 'Banana Island', type: 'property', price: 18000, rent: 1300, set: 'estate' },
   { name: 'Wahala Card', type: 'chance' },
   { name: 'Ikoyi', type: 'property', price: 22000, rent: 1600, set: 'estate' },
@@ -37,7 +37,12 @@ const WAHALA_CARDS = [
   { text: 'Sold spare parts. Collect ₦8,000.', effect: 'collect', amount: 8000 },
   { text: 'Go to Start. Collect ₦20,000.', effect: 'goto', cell: 0, amount: 20000 },
   { text: 'Danfo conductor forgot your change. Pay ₦200.', effect: 'pay', amount: 200 },
+  { text: 'Police checkpoint wahala — go to holding!', effect: 'jail' },
 ];
+
+const JAIL_POS = 10; // Police Holding
+const JAIL_BAIL = 5000;
+const MAX_HOUSES = 4;
 
 export class LandlordRuntime extends RuntimeBase {
   start() {
@@ -52,43 +57,67 @@ export class LandlordRuntime extends RuntimeBase {
     this.cash = {};
     this.positions = {};
     this.properties = {};
-    this.upgrades = {};
+    this.houses = {}; // cellIndex -> house count
+    this.mortgaged = {}; // cellIndex -> true
+    this.jail = {}; // playerId -> jail turns served (0 = not jailed)
 
     for (const player of this.players) {
       this.cash[player.id] = this.startingCash;
       this.positions[player.id] = 0;
       this.properties[player.id] = [];
-      this.upgrades[player.id] = {};
+      this.jail[player.id] = 0;
     }
 
-    this.state = {
+    this.state = this.buildState('Roll to move and buy properties.');
+  }
+
+  buildState(lastAction) {
+    return {
       gameType: this.gameType, name: this.manifest.name, emoji: this.manifest.emoji,
-      mode: 'landlord', phase: 'playing', board: clone(this.board),
+      mode: 'landlord', phase: this.state?.phase ?? 'playing', board: clone(this.board),
       players: clone(this.players.map((p) => ({ ...p, cash: this.cash[p.id] }))),
-      currentPlayerId: this.players[0]?.id, positions: clone(this.positions),
-      properties: clone(this.properties), wahalaCard: null,
-      rollsRemaining: 1, rollAgain: false, diceValue: null,
-      winnerPlayerIds: [], lastAction: 'Roll to move and buy properties.',
+      currentPlayerId: this.state?.currentPlayerId ?? this.players[0]?.id,
+      positions: clone(this.positions),
+      properties: clone(this.properties),
+      houses: clone(this.houses),
+      mortgaged: Object.keys(this.mortgaged),
+      jail: clone(this.jail),
+      wahalaCard: this.state?.wahalaCard ?? null,
+      rollsRemaining: this.state?.rollsRemaining ?? 1,
+      rollAgain: this.state?.rollAgain ?? false,
+      diceValue: this.state?.diceValue ?? null,
+      cellProps: this.state?.cellProps ?? null,
+      winnerPlayerIds: this.state?.winnerPlayerIds ?? [],
+      lastAction: lastAction ?? this.state?.lastAction ?? '',
     };
   }
 
   handleIntent(playerId, intent, isHost) {
     if (!this.state || this.state.phase !== 'playing' || this.state.currentPlayerId !== playerId) return false;
-    if (intent?.type !== 'roll' && intent?.type !== 'buy' && intent?.type !== 'pass') return false;
+    const blockedByPurchase = this.state.cellProps && !this.state.cellProps.owned;
 
-    if (intent?.type === 'roll') {
-      if (this.state.cellProps && !this.state.cellProps.owned) return false;
-      return this.doRoll(playerId);
+    switch (intent?.type) {
+      case 'roll':
+        if (blockedByPurchase) return false;
+        return this.jail[playerId] > 0 ? this.doJailRoll(playerId) : this.doRoll(playerId);
+      case 'buy':
+        return this.doBuy(playerId);
+      case 'pass':
+        if (blockedByPurchase) { this.state.cellProps = null; }
+        this.advanceTurn();
+        this.state.lastAction = `${this.playerName(playerId)} passed.`;
+        return true;
+      case 'pay_bail':
+        return this.payBail(playerId);
+      case 'buy_house':
+        return blockedByPurchase ? false : this.buyHouse(playerId, Number(intent?.position));
+      case 'mortgage':
+        return blockedByPurchase ? false : this.mortgageProperty(playerId, Number(intent?.position));
+      case 'unmortgage':
+        return blockedByPurchase ? false : this.unmortgageProperty(playerId, Number(intent?.position));
+      default:
+        return false;
     }
-    if (intent?.type === 'buy') {
-      return this.doBuy(playerId);
-    }
-    if (intent?.type === 'pass') {
-      this.advanceTurn();
-      this.state.lastAction = `${this.playerName(playerId)} passed.`;
-      return true;
-    }
-    return false;
   }
 
   doRoll(playerId) {
@@ -114,34 +143,21 @@ export class LandlordRuntime extends RuntimeBase {
       this.cash[playerId] -= cell.amount;
       this.state.lastAction = `${this.playerName(playerId)} paid ₦${cell.amount.toLocaleString()} tax.`;
       this.checkBankruptcy(playerId);
-    } else if (cell.type === 'property') {
+    } else if (cell.type === 'property' || cell.type === 'rail') {
       const owner = this.findOwnerOfPosition(pos);
       if (!owner) {
         this.state.cellProps = { price: cell.price, owned: false };
         this.state.lastAction = `${cell.name}: Buy for ₦${cell.price.toLocaleString()} or pass.`;
-        // Stay on player, let them buy/pass
         this.updatePlayerCash();
         return true;
-      } else if (owner !== playerId) {
-        const rent = this.quickMode ? Math.round(cell.rent / 2) : cell.rent;
+      }
+      if (owner !== playerId) {
+        const rent = this.rentFor(pos);
         this.cash[playerId] -= rent;
         this.cash[owner] += rent;
-        this.state.lastAction = `${this.playerName(playerId)} paid ₦${rent.toLocaleString()} rent to ${this.playerName(owner)}.`;
-        this.checkBankruptcy(playerId);
-      }
-    } else if (cell.type === 'penalty') {
-      this.cash[playerId] -= cell.amount;
-      this.state.lastAction = `${this.playerName(playerId)} paid ₦${cell.amount.toLocaleString()} penalty.`;
-      this.checkBankruptcy(playerId);
-    } else if (cell.type === 'rail') {
-      const owner = this.findOwnerOfPosition(pos);
-      if (!owner) {
-        this.state.cellProps = { price: cell.price, owned: false };
-        this.updatePlayerCash();
-        return true;
-      } else if (owner !== playerId) {
-        this.cash[playerId] -= cell.rent; this.cash[owner] += cell.rent;
-        this.state.lastAction = `${this.playerName(playerId)} paid ₦${cell.rent.toLocaleString()} to ${this.playerName(owner)}.`;
+        this.state.lastAction = rent === 0
+          ? `${cell.name} is mortgaged — no rent.`
+          : `${this.playerName(playerId)} paid ₦${rent.toLocaleString()} rent to ${this.playerName(owner)}.`;
         this.checkBankruptcy(playerId);
       }
     }
@@ -190,9 +206,129 @@ export class LandlordRuntime extends RuntimeBase {
       this.state.positions = clone(this.positions);
       if (card.amount) this.cash[playerId] += card.amount;
       this.state.lastAction = `Wahala: ${card.text}`;
+    } else if (card.effect === 'jail') {
+      this.positions[playerId] = JAIL_POS;
+      this.jail[playerId] = 1;
+      this.state.positions = clone(this.positions);
+      this.state.lastAction = `Wahala: ${card.text}`;
+      this.advanceTurn();
+      this.updatePlayerCash();
+      return true;
     }
     this.advanceTurn();
     this.updatePlayerCash();
+    return true;
+  }
+
+  // --- Rent with monopoly sets and houses; mortgaged properties collect nothing ---------------
+  rentFor(pos) {
+    const cell = this.board[pos];
+    const owner = this.findOwnerOfPosition(pos);
+    if (!owner || this.mortgaged[pos]) return 0;
+    let rent = cell.rent;
+    if (cell.set && this.ownsFullSet(owner, cell.set)) rent *= 2; // monopoly bonus
+    rent *= 1 + (this.houses[pos] ?? 0); // each house adds one base rent
+    if (this.quickMode) rent = Math.round(rent / 2);
+    return rent;
+  }
+
+  ownsFullSet(ownerId, set) {
+    const setCells = this.board.map((c, i) => (c.set === set ? i : -1)).filter((i) => i >= 0);
+    return setCells.length > 0 && setCells.every((i) => (this.properties[ownerId] ?? []).includes(i));
+  }
+
+  // --- Jail: pay bail or roll a double to get out; auto-released after 3 turns -----------------
+  doJailRoll(playerId) {
+    const d1 = 1 + Math.floor(this.rng() * 6);
+    const d2 = 1 + Math.floor(this.rng() * 6);
+    this.state.diceValue = d1 + d2;
+    if (d1 === d2) {
+      this.jail[playerId] = 0;
+      this.state.lastAction = `${this.playerName(playerId)} rolled a double and walks free!`;
+      return this.moveBy(playerId, d1 + d2, false);
+    }
+    this.jail[playerId] += 1;
+    if (this.jail[playerId] >= 3) {
+      this.cash[playerId] -= JAIL_BAIL;
+      this.jail[playerId] = 0;
+      this.state.lastAction = `${this.playerName(playerId)} served time and paid ₦${JAIL_BAIL.toLocaleString()} bail.`;
+      this.checkBankruptcy(playerId);
+    } else {
+      this.state.lastAction = `${this.playerName(playerId)} stays in holding (${this.jail[playerId]}/3).`;
+    }
+    this.advanceTurn();
+    this.updatePlayerCash();
+    return true;
+  }
+
+  payBail(playerId) {
+    if (this.jail[playerId] <= 0 || this.cash[playerId] < JAIL_BAIL) return false;
+    this.cash[playerId] -= JAIL_BAIL;
+    this.jail[playerId] = 0;
+    this.state.lastAction = `${this.playerName(playerId)} paid ₦${JAIL_BAIL.toLocaleString()} bail.`;
+    this.updatePlayerCash();
+    return true;
+  }
+
+  // Shared move resolution used after leaving jail on a double.
+  moveBy(playerId, total, isDouble) {
+    let pos = ((this.positions[playerId] ?? 0) + total) % this.board.length;
+    if (pos < 0) pos += this.board.length;
+    this.positions[playerId] = pos;
+    this.state.positions = clone(this.positions);
+    const cell = this.board[pos];
+    if (cell.type === 'property' || cell.type === 'rail') {
+      const owner = this.findOwnerOfPosition(pos);
+      if (!owner) {
+        this.state.cellProps = { price: cell.price, owned: false };
+        this.updatePlayerCash();
+        return true;
+      }
+      if (owner !== playerId) {
+        const rent = this.rentFor(pos);
+        this.cash[playerId] -= rent; this.cash[owner] += rent;
+        this.checkBankruptcy(playerId);
+      }
+    }
+    if (!isDouble) this.advanceTurn();
+    this.updatePlayerCash();
+    return true;
+  }
+
+  // --- Building, mortgaging -------------------------------------------------------------------
+  buyHouse(playerId, pos) {
+    const cell = this.board[pos];
+    if (!cell || cell.type !== 'property') return false;
+    if (this.findOwnerOfPosition(pos) !== playerId) return false;
+    if (!this.ownsFullSet(playerId, cell.set)) return false; // houses need the full colour set
+    if (this.mortgaged[pos]) return false;
+    if ((this.houses[pos] ?? 0) >= MAX_HOUSES) return false;
+    const cost = Math.round(cell.price / 2);
+    if (this.cash[playerId] < cost) return false;
+    this.cash[playerId] -= cost;
+    this.houses[pos] = (this.houses[pos] ?? 0) + 1;
+    this.state = this.buildState(`${this.playerName(playerId)} built on ${cell.name} (house ${this.houses[pos]}).`);
+    return true;
+  }
+
+  mortgageProperty(playerId, pos) {
+    const cell = this.board[pos];
+    if (!cell || this.findOwnerOfPosition(pos) !== playerId) return false;
+    if (this.mortgaged[pos] || (this.houses[pos] ?? 0) > 0) return false; // sell houses first
+    this.cash[playerId] += Math.round(cell.price / 2);
+    this.mortgaged[pos] = true;
+    this.state = this.buildState(`${this.playerName(playerId)} mortgaged ${cell.name}.`);
+    return true;
+  }
+
+  unmortgageProperty(playerId, pos) {
+    const cell = this.board[pos];
+    if (!cell || this.findOwnerOfPosition(pos) !== playerId || !this.mortgaged[pos]) return false;
+    const cost = Math.round(cell.price * 0.55);
+    if (this.cash[playerId] < cost) return false;
+    this.cash[playerId] -= cost;
+    delete this.mortgaged[pos];
+    this.state = this.buildState(`${this.playerName(playerId)} cleared the mortgage on ${cell.name}.`);
     return true;
   }
 
@@ -224,6 +360,9 @@ export class LandlordRuntime extends RuntimeBase {
 
   updatePlayerCash() {
     this.state.players = this.state.players.map((p) => ({ ...p, cash: this.cash[p.id] ?? 0 }));
+    this.state.houses = clone(this.houses);
+    this.state.mortgaged = Object.keys(this.mortgaged);
+    this.state.jail = clone(this.jail);
   }
 
   playerName(id) { return this.state?.players?.find((p) => p.id === id)?.name ?? 'A player'; }
@@ -244,19 +383,43 @@ export class LandlordRuntime extends RuntimeBase {
         { type: 'pass', label: 'Pass' },
       ];
     }
-    return [{ type: 'roll', label: `Roll dice${this.state.rollAgain ? ' (double!)' : ''}` }];
+    if (this.jail[id] > 0) {
+      const out = [{ type: 'roll', label: 'Roll for a double' }];
+      if (this.cash[id] >= JAIL_BAIL) out.unshift({ type: 'pay_bail', label: `Pay ₦${JAIL_BAIL.toLocaleString()} bail` });
+      return out;
+    }
+    const intents = [{ type: 'roll', label: `Roll dice${this.state.rollAgain ? ' (double!)' : ''}` }];
+    // Management actions on your own properties.
+    for (const pos of this.properties[id] ?? []) {
+      const cell = this.board[pos];
+      if (this.mortgaged[pos]) {
+        if (this.cash[id] >= Math.round(cell.price * 0.55)) intents.push({ type: 'unmortgage', position: pos, label: `Clear mortgage on ${cell.name}` });
+      } else {
+        if (cell.type === 'property' && this.ownsFullSet(id, cell.set) && (this.houses[pos] ?? 0) < MAX_HOUSES && this.cash[id] >= Math.round(cell.price / 2)) {
+          intents.push({ type: 'buy_house', position: pos, label: `Build on ${cell.name}` });
+        }
+        if ((this.houses[pos] ?? 0) === 0) intents.push({ type: 'mortgage', position: pos, label: `Mortgage ${cell.name}` });
+      }
+    }
+    return intents;
   }
   rankBotIntent(id) {
     const intents = this.legalIntents(id);
     if (intents.length === 0) return null;
-    return intents[0];
+    // Prefer building, then rolling; never voluntarily mortgage.
+    return intents.find((i) => i.type === 'buy_house') ?? intents.find((i) => i.type === 'roll') ?? intents[0];
   }
   extraSnapshot() {
-    return { cash: this.cash, positions: this.positions, properties: this.properties, wahalaDeck: this.wahalaDeck, wahalaIndex: this.wahalaIndex };
+    return {
+      cash: this.cash, positions: this.positions, properties: this.properties,
+      houses: this.houses, mortgaged: this.mortgaged, jail: this.jail,
+      wahalaDeck: this.wahalaDeck, wahalaIndex: this.wahalaIndex,
+    };
   }
   restoreExtra(extra) {
     this.cash = extra?.cash ?? {}; this.positions = extra?.positions ?? {};
-    this.properties = extra?.properties ?? {}; this.wahalaDeck = extra?.wahalaDeck ?? clone(WAHALA_CARDS);
-    this.wahalaIndex = extra?.wahalaIndex ?? 0;
+    this.properties = extra?.properties ?? {};
+    this.houses = extra?.houses ?? {}; this.mortgaged = extra?.mortgaged ?? {}; this.jail = extra?.jail ?? {};
+    this.wahalaDeck = extra?.wahalaDeck ?? clone(WAHALA_CARDS); this.wahalaIndex = extra?.wahalaIndex ?? 0;
   }
 }
