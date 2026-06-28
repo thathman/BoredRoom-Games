@@ -1,4 +1,5 @@
 // Whot — Nigerian card game runtime.
+// Rules reference: mykeels/whot and mykeels/whot-server (MIT, © Ikechi Michael).
 //
 // Full 54-card Whot deck with all special cards:
 //   1  Hold On       — player plays again
@@ -15,6 +16,10 @@
 //   pickDefence ('stack_same'|'stack_any'|'no_stack') — house rule for pick cards
 //   allowSpecialFinish (bool, default true) — whether an action/Whot card may end a round
 //   timeoutPenalty ('draw_one'|'draw_and_pass'|'pass') — server-enforced turn timeout
+//   initialHandSize (4|5|6, default 6) — official deal is six; shorter house deals are optional
+//   starSuspension ('skip_one'|'skip_two') — Star 8 can skip one or two players
+//   generalMarketTurn ('keep'|'pass') — whether the player of 14 plays again
+//   rotateStarter (bool, default true) — rotate the opening player between rounds
 //   A match is always best-of-five: first to three round wins, or the leader
 //   after round five. Pip totals are retained as a tie-break and recap signal.
 //   seed (number, optional) — deterministic shuffle seed
@@ -23,6 +28,7 @@ import { RuntimeBase, makeRng, shuffleInPlace, clone } from '../helpers.js';
 
 export const WHOT_SHAPES = ['Circle', 'Triangle', 'Cross', 'Square', 'Star'];
 const SPECIAL_NUMBERS = new Set([1, 2, 5, 8, 11, 14, 20]);
+const VALID_HAND_SIZES = new Set([4, 5, 6]);
 
 const WHOT_SHAPE_NUMBERS = {
   Circle: [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14],
@@ -63,14 +69,24 @@ export class WhotRuntime extends RuntimeBase {
     this.timeoutPenalty = ['draw_one', 'draw_and_pass', 'pass'].includes(this.context?.settings?.timeoutPenalty)
       ? this.context.settings.timeoutPenalty
       : 'draw_and_pass';
+    const requestedHandSize = Math.trunc(Number(this.context?.settings?.initialHandSize ?? 6));
+    this.initialHandSize = VALID_HAND_SIZES.has(requestedHandSize) ? requestedHandSize : 6;
+    this.starSuspension = ['skip_one', 'skip_two'].includes(this.context?.settings?.starSuspension)
+      ? this.context.settings.starSuspension
+      : 'skip_two';
+    this.generalMarketTurn = ['keep', 'pass'].includes(this.context?.settings?.generalMarketTurn)
+      ? this.context.settings.generalMarketTurn
+      : 'keep';
+    this.rotateStarter = this.context?.settings?.rotateStarter !== false;
     this.maxRounds = 5;
     this.roundsToWin = 3;
     this.direction = 1;
+    this.recycleSerial = 0;
 
     const rng = makeRng(seed);
     const deck = shuffleInPlace(clone(WHOT_DECK), rng);
     const hands = {};
-    const handSize = this.players.length <= 2 ? 5 : 4;
+    const handSize = this.initialHandSize;
     for (const player of this.players) hands[player.id] = deck.splice(0, handSize);
 
     let topIndex = deck.findIndex((card) => !card.isWhot);
@@ -96,6 +112,7 @@ export class WhotRuntime extends RuntimeBase {
       currentPlayerId: this.players[0]?.id,
       pendingPick: 0,
       pendingPickRank: null,
+      turnDirection: 1,
       round: 1,
       totalRounds: this.maxRounds,
       roundsToWin: this.roundsToWin,
@@ -105,6 +122,10 @@ export class WhotRuntime extends RuntimeBase {
         pickDefence: this.pickDefence,
         allowSpecialFinish: this.allowSpecialFinish,
         timeoutPenalty: this.timeoutPenalty,
+        initialHandSize: this.initialHandSize,
+        starSuspension: this.starSuspension,
+        generalMarketTurn: this.generalMarketTurn,
+        rotateStarter: this.rotateStarter,
         turnSeconds: Math.max(0, Math.trunc(Number(this.context?.settings?.turnSeconds ?? 45))),
       },
       roundWins: Object.fromEntries(this.players.map((player) => [player.id, 0])),
@@ -138,10 +159,11 @@ export class WhotRuntime extends RuntimeBase {
     const hand = this.hands[playerId] ?? [];
     const card = hand.find((c) => c.id === cardId);
     if (!card || !this.isLegalCard(card)) return false;
-    if (!this.allowSpecialFinish && hand.length === 1 && SPECIAL_NUMBERS.has(card.number)) return false;
+    if (!this.allowSpecialFinish && hand.length === 1 && this.isBlockedFinishCard(card)) return false;
     const calledShape = card.isWhot ? String(intent?.calledShape ?? intent?.shape ?? '') : null;
     if (card.isWhot && !WHOT_SHAPES.includes(calledShape)) return false;
 
+    this.state.callout = null;
     this.hands[playerId] = hand.filter((c) => c.id !== cardId);
     this.discard.push(this.state.topCard);
     this.state.topCard = card;
@@ -168,6 +190,7 @@ export class WhotRuntime extends RuntimeBase {
 
   handleTimeout(playerId) {
     if (this.state.currentPlayerId !== playerId || this.state.phase !== 'playing') return false;
+    this.state.callout = null;
     const name = this.playerName(playerId);
     if (this.state.pendingPick > 0) {
       const count = this.state.pendingPick;
@@ -196,6 +219,7 @@ export class WhotRuntime extends RuntimeBase {
   }
 
   handleDraw(playerId) {
+    this.state.callout = null;
     const count = this.state.pendingPick > 0 ? this.state.pendingPick : 1;
     for (let i = 0; i < count; i += 1) {
       const card = this.drawCard();
@@ -239,8 +263,13 @@ export class WhotRuntime extends RuntimeBase {
         this.state.lastAction = `${player.name} played Pick Three.`;
         return;
       case 8:
-        this.advanceTurn(2);
-        this.state.lastAction = `${player.name} played Suspension — next player skipped.`;
+        if (card.shape === 'Star' && this.starSuspension === 'skip_two') {
+          this.advanceTurn(3);
+          this.state.lastAction = `${player.name} played Star 8 — the next two players are suspended.`;
+        } else {
+          this.advanceTurn(2);
+          this.state.lastAction = `${player.name} played Suspension — next player skipped.`;
+        }
         return;
       case 11:
         if (!this.directionEnabled) {
@@ -249,6 +278,7 @@ export class WhotRuntime extends RuntimeBase {
           return;
         }
         this.direction *= -1;
+        this.state.turnDirection = this.direction;
         this.advanceTurn();
         this.state.lastAction = `${player.name} played Reverse — direction ${this.direction > 0 ? 'clockwise' : 'counter-clockwise'}.`;
         return;
@@ -259,8 +289,8 @@ export class WhotRuntime extends RuntimeBase {
           if (drawn) this.hands[other.id].push(drawn);
         }
         this.state.drawPileCount = this.deck.length;
-        this.advanceTurn();
-        this.state.lastAction = `${player.name} played General Market — everyone picks one.`;
+        if (this.generalMarketTurn === 'pass') this.advanceTurn();
+        this.state.lastAction = `${player.name} played General Market — everyone else picks one.${this.generalMarketTurn === 'keep' ? ` ${player.name} plays again.` : ''}`;
         return;
       default:
         this.advanceTurn();
@@ -274,7 +304,8 @@ export class WhotRuntime extends RuntimeBase {
       const recycled = this.discard ?? [];
       this.discard = [];
       if (recycled.length) {
-        this.deck = shuffleInPlace(recycled, makeRng((this.seed ^ this.state.round) >>> 0));
+        this.recycleSerial += 1;
+        this.deck = shuffleInPlace(recycled, makeRng((this.seed ^ this.state.round ^ (this.recycleSerial * 2654435761)) >>> 0));
       }
       this.state.topCard = top;
     }
@@ -328,6 +359,8 @@ export class WhotRuntime extends RuntimeBase {
     this.state.pendingPick = 0;
     this.state.pendingPickRank = null;
     this.direction = 1;
+    this.state.turnDirection = 1;
+    this.state.callout = null;
     this.state.lastAction = `Round ${this.state.round} started.`;
     this.dealNewRound();
   }
@@ -336,7 +369,7 @@ export class WhotRuntime extends RuntimeBase {
     const seed = (this.seed ^ this.state.round) >>> 0;
     const rng = makeRng(seed);
     const deck = shuffleInPlace(clone(WHOT_DECK), rng);
-    const handSize = this.players.length <= 2 ? 5 : 4;
+    const handSize = this.initialHandSize;
     for (const player of this.players) this.hands[player.id] = deck.splice(0, handSize);
     let topIndex = deck.findIndex((card) => !card.isWhot);
     if (topIndex < 0) topIndex = 0;
@@ -345,7 +378,8 @@ export class WhotRuntime extends RuntimeBase {
     this.discard = [];
     this.state.topCard = topCard;
     this.state.drawPileCount = deck.length;
-    this.state.currentPlayerId = this.players[0]?.id;
+    const starterIndex = this.rotateStarter ? (this.state.round - 1) % Math.max(1, this.players.length) : 0;
+    this.state.currentPlayerId = this.players[starterIndex]?.id;
     this.state.roundScores = [];
     this.state.winnerPlayerIds = [];
     this.updateHandCounts();
@@ -356,7 +390,7 @@ export class WhotRuntime extends RuntimeBase {
   }
 
   isLegalCard(card) {
-    if (!this.allowSpecialFinish && (this.hands[this.state.currentPlayerId]?.length ?? 0) === 1 && SPECIAL_NUMBERS.has(card.number)) return false;
+    if (!this.allowSpecialFinish && (this.hands[this.state.currentPlayerId]?.length ?? 0) === 1 && this.isBlockedFinishCard(card)) return false;
     if (this.state.pendingPick > 0) {
       if (this.pickDefence === 'no_stack') return false;
       if (this.pickDefence === 'stack_any') return card.number === 2 || card.number === 5;
@@ -368,6 +402,13 @@ export class WhotRuntime extends RuntimeBase {
     if (card.number === this.state.topCard.number) return true;
     if (this.directionEnabled && card.number === 11) return true;
     return false;
+  }
+
+  isBlockedFinishCard(card) {
+    if (card.isWhot) return true;
+    if (!this.specialsOn) return false;
+    if (card.number === 11) return this.directionEnabled;
+    return SPECIAL_NUMBERS.has(card.number);
   }
 
   advanceTurn(steps = 1) {
@@ -440,7 +481,7 @@ export class WhotRuntime extends RuntimeBase {
     const plays = (this.hands[playerId] ?? []).filter((card) => this.isLegalCard(card)).map((card) => ({
       type: 'play_card',
       cardId: card.id,
-      calledShape: card.isWhot ? 'Circle' : undefined,
+      calledShape: card.isWhot ? this.bestShapeFor(playerId, card.id) : undefined,
       label: `Play ${card.label}`,
     }));
     const drawLabel = this.state.pendingPick > 0 ? `Pick ${this.state.pendingPick}` : 'Go to market';
@@ -460,7 +501,40 @@ export class WhotRuntime extends RuntimeBase {
       return { intent, weight };
     });
     scored.sort((a, b) => b.weight - a.weight);
-    return scored[0]?.intent ?? null;
+    const selected = scored[0]?.intent ?? null;
+    if (selected?.type === 'play_card') {
+      const card = hand.find((candidate) => candidate.id === selected.cardId);
+      if (card?.isWhot) return { ...selected, calledShape: this.bestShapeFor(playerId, card.id) };
+    }
+    return selected;
+  }
+
+  bestShapeFor(playerId, excludedCardId = '') {
+    const counts = Object.fromEntries(WHOT_SHAPES.map((shape) => [shape, 0]));
+    for (const card of this.hands?.[playerId] ?? []) {
+      if (card.id !== excludedCardId && !card.isWhot && counts[card.shape] != null) counts[card.shape] += 1;
+    }
+    return WHOT_SHAPES.reduce((best, shape) => counts[shape] > counts[best] ? shape : best, 'Circle');
+  }
+
+  explainIntent(intent) {
+    if (!this.state || this.state.phase !== 'playing') return 'That move is unavailable because the round is not in play.';
+    if (intent?.type === 'play_card') {
+      const card = Object.values(this.hands ?? {}).flat().find((candidate) => candidate.id === intent.cardId);
+      if (!card) return 'That card is not in the active player’s hand.';
+      if (this.state.pendingPick > 0) {
+        if (this.pickDefence === 'no_stack') return `This house does not allow blocking a Pick ${this.state.pendingPickRank === 5 ? 'Three' : 'Two'} request.`;
+        return this.pickDefence === 'stack_same'
+          ? `Only another ${this.state.pendingPickRank} can defend this pick request.`
+          : 'Only a Pick Two or Pick Three can defend this pick request.';
+      }
+      if (!this.allowSpecialFinish && this.isBlockedFinishCard(card)) return 'This house does not allow an action card or Whot 20 as the final card.';
+      if (card.isWhot && !WHOT_SHAPES.includes(String(intent?.calledShape ?? ''))) return 'Choose Circle, Triangle, Cross, Square, or Star after playing Whot 20.';
+      const required = this.state.requestedShape ?? this.state.topCard?.shape;
+      return `Play the same shape (${required}) or number (${this.state.topCard?.number}), play Whot 20, or go to market.`;
+    }
+    if (intent?.type === 'draw') return 'Only the active player can go to market.';
+    return 'Use one of the highlighted legal actions on the active controller.';
   }
 
   recapSignals() {
@@ -484,7 +558,12 @@ export class WhotRuntime extends RuntimeBase {
       pickDefence: this.pickDefence,
       allowSpecialFinish: this.allowSpecialFinish,
       timeoutPenalty: this.timeoutPenalty,
+      initialHandSize: this.initialHandSize,
+      starSuspension: this.starSuspension,
+      generalMarketTurn: this.generalMarketTurn,
+      rotateStarter: this.rotateStarter,
       direction: this.direction,
+      recycleSerial: this.recycleSerial,
       maxRounds: this.maxRounds,
       roundsToWin: this.roundsToWin,
     };
@@ -500,7 +579,12 @@ export class WhotRuntime extends RuntimeBase {
     this.pickDefence = extra?.pickDefence ?? 'stack_same';
     this.allowSpecialFinish = extra?.allowSpecialFinish ?? true;
     this.timeoutPenalty = extra?.timeoutPenalty ?? 'draw_and_pass';
+    this.initialHandSize = extra?.initialHandSize ?? 6;
+    this.starSuspension = extra?.starSuspension ?? 'skip_two';
+    this.generalMarketTurn = extra?.generalMarketTurn ?? 'keep';
+    this.rotateStarter = extra?.rotateStarter ?? true;
     this.direction = extra?.direction ?? 1;
+    this.recycleSerial = extra?.recycleSerial ?? 0;
     this.maxRounds = extra?.maxRounds ?? 5;
     this.roundsToWin = extra?.roundsToWin ?? 3;
   }

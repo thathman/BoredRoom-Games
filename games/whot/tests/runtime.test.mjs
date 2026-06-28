@@ -5,14 +5,14 @@ import test from 'node:test';
 import { WhotRuntime, WHOT_DECK, WHOT_SHAPES, createWhotDeck } from '../../../runtime/games/whot.js';
 import { createPlugin } from '../../../runtime/game-runtime.js';
 
-function makeWhot(settings = {}) {
+function makeWhot(settings = {}, players = [{ id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' }]) {
   const runtime = new WhotRuntime({
     id: 'whot', name: 'Whot', emoji: '🃏', version: '1.2.0.0',
     minPlayers: 2, maxPlayers: 8,
     capabilities: { bots: true, audience: true, hints: true, restore: true },
   });
   runtime.configure({ sessionId: 's', gameRunId: 'r', settings: { allowBots: true, seed: 42, ...settings } });
-  runtime.seatPlayers([{ id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' }]);
+  runtime.seatPlayers(players);
   runtime.start();
   return runtime;
 }
@@ -89,29 +89,23 @@ test('different seed produces different initial state', () => {
 
 // ── Deal ──────────────────────────────────────────────────────────────────
 
-test('each player gets the correct hand size (5 for 2 players, 4 for 3+)', () => {
+test('the standard deal gives every player six cards', () => {
   const runtime = makeWhot();
   const p1 = runtime.privateState('p1');
   const p2 = runtime.privateState('p2');
-  // 2 players -> handSize = 5 (code: players.length <= 2 ? 5 : 4)
-  assert.equal(p1.hand.length, 5);
-  assert.equal(p2.hand.length, 5);
+  assert.equal(p1.hand.length, 6);
+  assert.equal(p2.hand.length, 6);
+  assert.equal(runtime.publicState().settings.initialHandSize, 6);
 });
 
-test('4 players get 4 cards each', () => {
-  const runtime = new WhotRuntime({
-    id: 'whot', name: 'Whot', emoji: '🃏', version: '1.2.0.0',
-    minPlayers: 2, maxPlayers: 8,
-    capabilities: { bots: true, audience: true, hints: true, restore: true },
-  });
-  runtime.configure({ sessionId: 's', gameRunId: 'r', settings: { allowBots: true, seed: 42 } });
-  runtime.seatPlayers([
+test('the house can choose a shorter four-card deal', () => {
+  const runtime = makeWhot({ initialHandSize: 4 }, [
     { id: 'p1', name: 'A' }, { id: 'p2', name: 'B' },
     { id: 'p3', name: 'C' }, { id: 'p4', name: 'D' },
   ]);
-  runtime.start();
   assert.equal(runtime.privateState('p1').hand.length, 4);
   assert.equal(runtime.privateState('p2').hand.length, 4);
+  assert.equal(runtime.publicState().settings.initialHandSize, 4);
 });
 
 test('top card is never a Whot card', () => {
@@ -195,10 +189,12 @@ test('Whot call-shape rejects invalid shape', () => {
   setHands(runtime, [['Whot', 20]], [['Circle', 3]]);
   runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
   runtime.state.currentPlayerId = 'p1';
+  runtime.state.callout = { kind: 'last_card', playerId: 'p2', playerName: 'Tobi', text: 'Tobi: last card!', sequence: 1 };
   // Card goes back to hand on illegal call
   assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0', calledShape: 'Invalid' }, false), false);
   assert.equal(runtime.privateState('p1').hand.length, 1);
   assert.equal(runtime.publicState().topCard.id, 't');
+  assert.equal(runtime.publicState().callout.kind, 'last_card');
 });
 
 test('after Whot call, next player must match requested shape', () => {
@@ -298,6 +294,37 @@ test('Suspension skips next player', () => {
   assert.equal(runtime.state.currentPlayerId, 'p1');
 });
 
+test('Star 8 suspends the next two players by default', () => {
+  const runtime = makeWhot({}, [
+    { id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' },
+    { id: 'p3', name: 'Ngozi' }, { id: 'p4', name: 'Femi' },
+  ]);
+  runtime.hands.p1 = [
+    { id: 'star8', shape: 'Star', number: 8, label: 'Star 8', isWhot: false },
+    { id: 'star3', shape: 'Star', number: 3, label: 'Star 3', isWhot: false },
+  ];
+  runtime.state.topCard = { id: 't', shape: 'Star', number: 7, label: 'Star 7', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'star8' }, false), true);
+  assert.equal(runtime.state.currentPlayerId, 'p4');
+  assert.match(runtime.state.lastAction, /next two players are suspended/i);
+});
+
+test('the house can make Star 8 use ordinary one-player suspension', () => {
+  const runtime = makeWhot({ starSuspension: 'skip_one' }, [
+    { id: 'p1', name: 'Ada' }, { id: 'p2', name: 'Tobi' },
+    { id: 'p3', name: 'Ngozi' }, { id: 'p4', name: 'Femi' },
+  ]);
+  runtime.hands.p1 = [
+    { id: 'star8', shape: 'Star', number: 8, label: 'Star 8', isWhot: false },
+    { id: 'star3', shape: 'Star', number: 3, label: 'Star 3', isWhot: false },
+  ];
+  runtime.state.topCard = { id: 't', shape: 'Star', number: 7, label: 'Star 7', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  runtime.handleIntent('p1', { type: 'play_card', cardId: 'star8' }, false);
+  assert.equal(runtime.state.currentPlayerId, 'p3');
+});
+
 // ── General Market (14) ──────────────────────────────────────────────────
 
 test('General Market makes opponents draw one card each', () => {
@@ -310,6 +337,17 @@ test('General Market makes opponents draw one card each', () => {
   const p2HandBefore = runtime.privateState('p2').hand.length;
   assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), true);
   assert.equal(runtime.privateState('p2').hand.length, p2HandBefore + 1); // p2 drew 1
+  assert.equal(runtime.state.currentPlayerId, 'p1'); // authentic reference rule: player goes again
+  assert.match(runtime.state.lastAction, /plays again/i);
+});
+
+test('the house can pass the turn after General Market', () => {
+  const runtime = makeWhot({ generalMarketTurn: 'pass' });
+  setHands(runtime, [['Circle', 14], ['Circle', 3]], [['Triangle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false);
+  assert.equal(runtime.state.currentPlayerId, 'p2');
 });
 
 // ── Reverse (11) ─────────────────────────────────────────────────────────
@@ -404,6 +442,17 @@ test('best-of-five match advances rounds', () => {
   assert.equal(runtime.state.phase, 'playing');
   assert.equal(runtime.state.totalRounds, 5);
   assert.equal(runtime.state.roundsToWin, 3);
+  assert.equal(runtime.state.currentPlayerId, 'p2');
+});
+
+test('the house can keep the same opening player every round', () => {
+  const runtime = makeWhot({ rotateStarter: false });
+  setHands(runtime, [['Circle', 3]], [['Triangle', 10]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false);
+  runtime.handleIntent('p1', { type: 'advance' }, true);
+  assert.equal(runtime.state.currentPlayerId, 'p1');
 });
 
 test('automatically calls semi last card, last card and check up', () => {
@@ -502,6 +551,24 @@ test('bot prioritises special cards', () => {
   assert.equal(intent.cardId, 'h0');
 });
 
+test('bot calls the shape it holds most after playing Whot 20', () => {
+  const runtime = makeWhot();
+  setHands(runtime, [['Whot', 20], ['Star', 3], ['Star', 4], ['Circle', 7]], [['Triangle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  const intent = runtime.rankBotIntent('p1');
+  assert.equal(intent.cardId, 'h0');
+  assert.equal(intent.calledShape, 'Star');
+});
+
+test('a later action clears a stale card-count callout', () => {
+  const runtime = makeWhot();
+  runtime.state.callout = { kind: 'last_card', playerId: 'p1', playerName: 'Ada', text: 'Ada: last card!', sequence: 2 };
+  runtime.state.currentPlayerId = 'p1';
+  runtime.handleIntent('p1', { type: 'draw' }, false);
+  assert.equal(runtime.state.callout, null);
+});
+
 // ── Special cards disabled ───────────────────────────────────────────────
 
 test('with specialCards off, all cards play as regular', () => {
@@ -568,6 +635,24 @@ test('house can prohibit finishing a round with a special card', () => {
   runtime.state.currentPlayerId = 'p1';
   assert.equal(runtime.legalIntents('p1').some((intent) => intent.type === 'play_card'), false);
   assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), false);
+});
+
+test('ordinary card 11 can finish when reverse is disabled', () => {
+  const runtime = makeWhot({ allowSpecialFinish: false, enableDirection: false });
+  setHands(runtime, [['Circle', 11]], [['Circle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), true);
+  assert.equal(runtime.state.phase, 'round_end');
+});
+
+test('finish restrictions do not block regular cards when special effects are disabled', () => {
+  const runtime = makeWhot({ allowSpecialFinish: false, specialCards: false });
+  setHands(runtime, [['Circle', 2]], [['Circle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), true);
+  assert.equal(runtime.state.phase, 'round_end');
 });
 
 test('turn timeout applies the configured draw-and-pass penalty', () => {

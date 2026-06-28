@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-RELEASE_TAG="${RELEASE_TAG:-v1.5.0.0}"
+RELEASE_TAG="${RELEASE_TAG:-v1.6.0.0}"
 export RELEASE_TAG
 
 if [ -z "${BOREDROOM_GAMES_SIGNING_KEY:-}" ]; then
