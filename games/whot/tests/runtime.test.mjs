@@ -198,6 +198,7 @@ test('Whot call-shape rejects invalid shape', () => {
   // Card goes back to hand on illegal call
   assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0', calledShape: 'Invalid' }, false), false);
   assert.equal(runtime.privateState('p1').hand.length, 1);
+  assert.equal(runtime.publicState().topCard.id, 't');
 });
 
 test('after Whot call, next player must match requested shape', () => {
@@ -529,6 +530,64 @@ test('legal intents do not reveal opponent hands', () => {
   for (const intent of p2Legal) {
     if (intent.cardId) assert.ok(p2HandIds.includes(intent.cardId));
   }
+});
+
+test('Whot narration includes the requested shape', () => {
+  const runtime = makeWhot();
+  setHands(runtime, [['Whot', 20], ['Circle', 3]], [['Star', 7]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0', calledShape: 'Star' }, false), true);
+  assert.match(runtime.publicState().lastAction, /Ada played Whot 20 and requested Star/i);
+});
+
+test('house can prohibit blocking a pick request', () => {
+  const runtime = makeWhot({ pickDefence: 'no_stack' });
+  setHands(runtime, [['Circle', 2], ['Circle', 3]], [['Circle', 2], ['Circle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), true);
+  assert.equal(runtime.legalIntents('p2').some((intent) => intent.type === 'play_card'), false);
+  assert.equal(runtime.handleIntent('p2', { type: 'play_card', cardId: 'h10' }, false), false);
+});
+
+test('house can allow either pick rank to block a request', () => {
+  const runtime = makeWhot({ pickDefence: 'stack_any' });
+  setHands(runtime, [['Circle', 2], ['Circle', 3]], [['Circle', 5], ['Circle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), true);
+  assert.equal(runtime.handleIntent('p2', { type: 'play_card', cardId: 'h10' }, false), true);
+  assert.equal(runtime.state.pendingPick, 5);
+});
+
+test('house can prohibit finishing a round with a special card', () => {
+  const runtime = makeWhot({ allowSpecialFinish: false });
+  setHands(runtime, [['Circle', 2]], [['Circle', 4]]);
+  runtime.state.topCard = { id: 't', shape: 'Circle', number: 10, label: 'Circle 10', isWhot: false };
+  runtime.state.currentPlayerId = 'p1';
+  assert.equal(runtime.legalIntents('p1').some((intent) => intent.type === 'play_card'), false);
+  assert.equal(runtime.handleIntent('p1', { type: 'play_card', cardId: 'h0' }, false), false);
+});
+
+test('turn timeout applies the configured draw-and-pass penalty', () => {
+  const runtime = makeWhot({ timeoutPenalty: 'draw_and_pass' });
+  const before = runtime.privateState('p1').hand.length;
+  assert.equal(runtime.handleIntent('p1', { type: 'timeout' }, true), true);
+  assert.equal(runtime.privateState('p1').hand.length, before + 1);
+  assert.equal(runtime.state.currentPlayerId, 'p2');
+  assert.match(runtime.state.lastAction, /ran out of time, picked one, and lost the turn/i);
+});
+
+test('turn timeout serves the full pending pick and clears it', () => {
+  const runtime = makeWhot();
+  runtime.state.pendingPick = 4;
+  runtime.state.pendingPickRank = 2;
+  const before = runtime.privateState('p1').hand.length;
+  assert.equal(runtime.handleIntent('p1', { type: 'timeout' }, true), true);
+  assert.equal(runtime.privateState('p1').hand.length, before + 4);
+  assert.equal(runtime.state.pendingPick, 0);
+  assert.equal(runtime.state.currentPlayerId, 'p2');
 });
 
 test('explainIntent returns readable message for rejected action', () => {

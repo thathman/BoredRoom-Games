@@ -4,14 +4,18 @@
   "name": "Whot",
   "emoji": "🃏",
   "description": "Nigerian shape-and-number showdown.",
-  "version": "1.3.0.1",
+  "version": "1.5.0.0",
   "minPlayers": 2,
   "maxPlayers": 8,
   "capabilities": {
     "bots": true,
     "audience": true,
-    "hints": false,
+    "hints": true,
     "restore": true
+  },
+  "rules": {
+    "summary": "Match the discard by shape or number. Whot 20 calls the next shape. Depending on the house setup, Pick Two and Pick Three may stack, mix, or be unblockable; action cards may be barred from winning a round. Hold On repeats a turn, Suspension skips, General Market makes opponents pick one, and optional card 11 reverses play. The first player to call check up and empty their hand wins the round; first to three round wins takes the best-of-five game.",
+    "intents": ["play_card", "draw", "advance", "timeout"]
   },
   "entrypoints": {
     "server": "source/server.js",

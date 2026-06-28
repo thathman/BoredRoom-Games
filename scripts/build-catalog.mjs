@@ -32,8 +32,8 @@ for (const id of (await readdir(gamesRoot)).sort()) {
       deterministicBots: sourceManifest.capabilities.bots,
     },
     rules: {
-      summary: `${sourceManifest.name} validates every player action on the server and exposes legal actions without revealing private state.`,
-      intents: ['answer', 'guess', 'answer_text', 'submit_order', 'advance'],
+      summary: sourceManifest.rules?.summary ?? `${sourceManifest.name} validates every player action on the server and exposes legal actions without revealing private state.`,
+      intents: sourceManifest.rules?.intents ?? ['answer', 'guess', 'answer_text', 'submit_order', 'advance'],
     },
   };
   const artifactName = `${id}-${manifest.version}.tgz`;

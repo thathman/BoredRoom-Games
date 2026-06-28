@@ -12,6 +12,9 @@
 // Settings:
 //   specialCards (bool, default true) — enable/disable special card effects
 //   enableDirection (bool, default false) — card 11 acts as Reverse
+//   pickDefence ('stack_same'|'stack_any'|'no_stack') — house rule for pick cards
+//   allowSpecialFinish (bool, default true) — whether an action/Whot card may end a round
+//   timeoutPenalty ('draw_one'|'draw_and_pass'|'pass') — server-enforced turn timeout
 //   A match is always best-of-five: first to three round wins, or the leader
 //   after round five. Pip totals are retained as a tie-break and recap signal.
 //   seed (number, optional) — deterministic shuffle seed
@@ -19,6 +22,7 @@
 import { RuntimeBase, makeRng, shuffleInPlace, clone } from '../helpers.js';
 
 export const WHOT_SHAPES = ['Circle', 'Triangle', 'Cross', 'Square', 'Star'];
+const SPECIAL_NUMBERS = new Set([1, 2, 5, 8, 11, 14, 20]);
 
 const WHOT_SHAPE_NUMBERS = {
   Circle: [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14],
@@ -52,6 +56,13 @@ export class WhotRuntime extends RuntimeBase {
     const seed = Number(this.context?.settings?.seed) || (Date.now() & 0xffffffff);
     this.specialsOn = this.context?.settings?.specialCards !== false;
     this.directionEnabled = this.context?.settings?.enableDirection === true;
+    this.pickDefence = ['stack_same', 'stack_any', 'no_stack'].includes(this.context?.settings?.pickDefence)
+      ? this.context.settings.pickDefence
+      : 'stack_same';
+    this.allowSpecialFinish = this.context?.settings?.allowSpecialFinish !== false;
+    this.timeoutPenalty = ['draw_one', 'draw_and_pass', 'pass'].includes(this.context?.settings?.timeoutPenalty)
+      ? this.context.settings.timeoutPenalty
+      : 'draw_and_pass';
     this.maxRounds = 5;
     this.roundsToWin = 3;
     this.direction = 1;
@@ -88,6 +99,14 @@ export class WhotRuntime extends RuntimeBase {
       round: 1,
       totalRounds: this.maxRounds,
       roundsToWin: this.roundsToWin,
+      settings: {
+        specialCards: this.specialsOn,
+        enableDirection: this.directionEnabled,
+        pickDefence: this.pickDefence,
+        allowSpecialFinish: this.allowSpecialFinish,
+        timeoutPenalty: this.timeoutPenalty,
+        turnSeconds: Math.max(0, Math.trunc(Number(this.context?.settings?.turnSeconds ?? 45))),
+      },
       roundWins: Object.fromEntries(this.players.map((player) => [player.id, 0])),
       callout: null,
       calloutSequence: 0,
@@ -111,6 +130,7 @@ export class WhotRuntime extends RuntimeBase {
       return false;
     }
     if (this.state.phase !== 'playing' || this.state.currentPlayerId !== playerId) return false;
+    if (intent?.type === 'timeout' && isHost) return this.handleTimeout(playerId);
     if (intent?.type === 'draw') return this.handleDraw(playerId);
     if (intent?.type !== 'play_card') return false;
 
@@ -118,19 +138,19 @@ export class WhotRuntime extends RuntimeBase {
     const hand = this.hands[playerId] ?? [];
     const card = hand.find((c) => c.id === cardId);
     if (!card || !this.isLegalCard(card)) return false;
+    if (!this.allowSpecialFinish && hand.length === 1 && SPECIAL_NUMBERS.has(card.number)) return false;
+    const calledShape = card.isWhot ? String(intent?.calledShape ?? intent?.shape ?? '') : null;
+    if (card.isWhot && !WHOT_SHAPES.includes(calledShape)) return false;
 
     this.hands[playerId] = hand.filter((c) => c.id !== cardId);
     this.discard.push(this.state.topCard);
     this.state.topCard = card;
     this.state.requestedShape = null;
 
+    let requestedShape = null;
     if (card.isWhot) {
-      const shape = String(intent?.calledShape ?? intent?.shape ?? '');
-      if (!WHOT_SHAPES.includes(shape)) {
-        this.hands[playerId].push(card);
-        return false;
-      }
-      this.state.requestedShape = shape;
+      this.state.requestedShape = calledShape;
+      requestedShape = calledShape;
     }
 
     const player = this.players.find((c) => c.id === playerId);
@@ -140,8 +160,37 @@ export class WhotRuntime extends RuntimeBase {
       this.endRound(player);
       return true;
     }
-    this.applySpecial(card, player);
+    this.applySpecial(card, player, requestedShape);
     this.announceCardCount(playerId, remainingCards);
+    this.updateHandCounts();
+    return true;
+  }
+
+  handleTimeout(playerId) {
+    if (this.state.currentPlayerId !== playerId || this.state.phase !== 'playing') return false;
+    const name = this.playerName(playerId);
+    if (this.state.pendingPick > 0) {
+      const count = this.state.pendingPick;
+      for (let i = 0; i < count; i += 1) {
+        const card = this.drawCard();
+        if (card) this.hands[playerId].push(card);
+      }
+      this.state.pendingPick = 0;
+      this.state.pendingPickRank = null;
+      this.advanceTurn();
+      this.state.lastAction = `${name} ran out of time, picked ${count}, and lost the turn.`;
+    } else if (this.timeoutPenalty === 'pass') {
+      this.advanceTurn();
+      this.state.lastAction = `${name} ran out of time and lost the turn.`;
+    } else {
+      const card = this.drawCard();
+      if (card) this.hands[playerId].push(card);
+      if (this.timeoutPenalty === 'draw_and_pass') this.advanceTurn();
+      this.state.lastAction = this.timeoutPenalty === 'draw_one'
+        ? `${name} ran out of time and picked one. Their turn continues.`
+        : `${name} ran out of time, picked one, and lost the turn.`;
+    }
+    this.state.drawPileCount = this.deck.length;
     this.updateHandCounts();
     return true;
   }
@@ -164,10 +213,13 @@ export class WhotRuntime extends RuntimeBase {
     return true;
   }
 
-  applySpecial(card, player) {
+  applySpecial(card, player, requestedShape = null) {
+    const played = requestedShape
+      ? `${player.name} played Whot 20 and requested ${requestedShape}.`
+      : `${player.name} played ${card.label}.`;
     if (!this.specialsOn) {
       this.advanceTurn();
-      this.state.lastAction = `${player.name} played ${card.label}.`;
+      this.state.lastAction = played;
       return;
     }
     switch (card.number) {
@@ -212,7 +264,7 @@ export class WhotRuntime extends RuntimeBase {
         return;
       default:
         this.advanceTurn();
-        this.state.lastAction = `${player.name} played ${card.label}.`;
+        this.state.lastAction = played;
     }
   }
 
@@ -304,8 +356,12 @@ export class WhotRuntime extends RuntimeBase {
   }
 
   isLegalCard(card) {
-    if (!this.specialsOn && card.number === 14) return false; // General Market disabled
-    if (this.state.pendingPick > 0) return card.number === this.state.pendingPickRank;
+    if (!this.allowSpecialFinish && (this.hands[this.state.currentPlayerId]?.length ?? 0) === 1 && SPECIAL_NUMBERS.has(card.number)) return false;
+    if (this.state.pendingPick > 0) {
+      if (this.pickDefence === 'no_stack') return false;
+      if (this.pickDefence === 'stack_any') return card.number === 2 || card.number === 5;
+      return card.number === this.state.pendingPickRank;
+    }
     if (card.isWhot) return true;
     const matchShape = this.state.requestedShape ?? this.state.topCard.shape;
     if (card.shape === matchShape) return true;
@@ -350,7 +406,9 @@ export class WhotRuntime extends RuntimeBase {
         : `${playerName}: check up!`;
     this.state.calloutSequence = (this.state.calloutSequence ?? 0) + 1;
     this.state.callout = { kind, playerId, playerName, text, sequence: this.state.calloutSequence };
-    if (remainingCards > 0) this.state.lastAction = text;
+    if (remainingCards > 0) this.state.lastAction = this.state.lastAction
+      ? `${this.state.lastAction} ${text}`
+      : text;
   }
 
   matchWinners() {
@@ -423,6 +481,9 @@ export class WhotRuntime extends RuntimeBase {
       seed: this.seed,
       specialsOn: this.specialsOn,
       directionEnabled: this.directionEnabled,
+      pickDefence: this.pickDefence,
+      allowSpecialFinish: this.allowSpecialFinish,
+      timeoutPenalty: this.timeoutPenalty,
       direction: this.direction,
       maxRounds: this.maxRounds,
       roundsToWin: this.roundsToWin,
@@ -436,6 +497,9 @@ export class WhotRuntime extends RuntimeBase {
     this.seed = extra?.seed ?? 1;
     this.specialsOn = extra?.specialsOn ?? true;
     this.directionEnabled = extra?.directionEnabled ?? false;
+    this.pickDefence = extra?.pickDefence ?? 'stack_same';
+    this.allowSpecialFinish = extra?.allowSpecialFinish ?? true;
+    this.timeoutPenalty = extra?.timeoutPenalty ?? 'draw_and_pass';
     this.direction = extra?.direction ?? 1;
     this.maxRounds = extra?.maxRounds ?? 5;
     this.roundsToWin = extra?.roundsToWin ?? 3;
