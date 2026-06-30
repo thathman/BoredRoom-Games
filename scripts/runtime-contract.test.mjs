@@ -57,6 +57,8 @@ for (const id of gameIds) {
           ? { ...legal, answers: ['Music', 'Food'] }
           : legal.type === 'voice_submission'
             ? { ...legal, transcript: 'test translation' }
+            : legal.type === 'fastest_finger_submit'
+              ? { ...legal, order: [0, 1, 2, 3] }
         : { ...legal };
     assert.equal(runtime.handleIntent('p1', intent, false), true);
     if (['answer', 'answer_text', 'guess', 'submit_order', 'survey_answer', 'voice_submission'].includes(intent.type) && 'submitted' in runtime.privateState('p1')) {

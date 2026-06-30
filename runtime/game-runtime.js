@@ -13,7 +13,7 @@ import { EtttRuntime } from './games/ettt.js';
 import { HustleRuntime } from './games/hustle.js';
 import { BibleTimelineRuntime } from './games/bible-timeline.js';
 import { ColorWahalaRuntime } from './games/color-wahala.js';
-import { WhoSabiPassRuntime } from './games/who-sabi-pass.js';
+import { MoneyTriviaRuntime, generateLadder } from './games/money-trivia.js';
 import { HalfHalfRuntime } from './games/half-half.js';
 import { FaithFeudRuntime } from './games/faith-feud.js';
 import { LogoGuesserRuntime } from './games/logo-guesser.js';
@@ -25,7 +25,7 @@ import { WordWahalaRuntime } from './games/word-wahala.js';
 export {
   WhotRuntime, WHOT_SHAPES, WHOT_DECK, createWhotDeck,
   LudoRuntime, Connect4Runtime, EtttRuntime, HustleRuntime,
-  BibleTimelineRuntime, ColorWahalaRuntime, WhoSabiPassRuntime,
+  BibleTimelineRuntime, ColorWahalaRuntime, MoneyTriviaRuntime, generateLadder,
   HalfHalfRuntime, FaithFeudRuntime, LogoGuesserRuntime,
   MarketPriceRuntime, PidginTranslatorRuntime, LandlordRuntime,
   WordWahalaRuntime,
@@ -44,7 +44,7 @@ const RUNTIMES = {
   'ludo': LudoRuntime,
   'market-price': MarketPriceRuntime,
   'pidgin-translator': PidginTranslatorRuntime,
-  'trivia': WhoSabiPassRuntime,
+  'trivia': MoneyTriviaRuntime,
   'whot': WhotRuntime,
   'word-wahala': WordWahalaRuntime,
 };
