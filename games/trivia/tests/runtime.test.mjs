@@ -215,6 +215,37 @@ test('select does not commit; final answer is required to reveal', () => {
   assert.equal(r.state.phase, 'hot_seat');
 });
 
+test('fastest finger uses server-received time, ignoring any client timestamp', () => {
+  const r = make();
+  // p2 actually submits earlier in server time but lies with a tiny clientTs; p1 is slower.
+  r._now += 40; r.handleIntent('p2', { type: 'fastest_finger_submit', order: r.ffQuestion.correctOrder, clientTs: 0 }, false);
+  r._now += 200; r.handleIntent('p1', { type: 'fastest_finger_submit', order: r.ffQuestion.correctOrder, clientTs: -999999 }, false);
+  r._now += 200; r.handleIntent('p3', { type: 'fastest_finger_submit', order: [3, 2, 1, 0] }, false);
+  // Server time wins: p2 (40ms) beats p1 (240ms) regardless of the forged clientTs.
+  assert.equal(r.contestantId, 'p2');
+});
+
+test('a duplicate fastest-finger submit from the same player is rejected', () => {
+  const r = make();
+  assert.equal(r.handleIntent('p1', { type: 'fastest_finger_submit', order: r.ffQuestion.correctOrder }, false), true);
+  assert.equal(r.handleIntent('p1', { type: 'fastest_finger_submit', order: r.ffQuestion.correctOrder }, false), false);
+});
+
+test('a second lock_answer replay is rejected once an answer is committed', () => {
+  const r = make();
+  winFastestFinger(r, 'p2');
+  const q = r.hotSeatQuestions[r.level];
+  r.handleIntent('p2', { type: 'select_answer', optionIndex: q.answer }, false);
+  assert.equal(r.handleIntent('p2', { type: 'lock_answer' }, false), true);
+  assert.equal(r.handleIntent('p2', { type: 'lock_answer' }, false), false); // already committed
+});
+
+test('audience votes are rejected outside an Ask the Room lifeline', () => {
+  const r = make();
+  winFastestFinger(r, 'p1');
+  assert.equal(r.handleIntent('p2', { type: 'audience_vote', optionIndex: 0 }, false), false);
+});
+
 test('snapshot/restore preserves an in-progress hot seat', () => {
   const r = make();
   winFastestFinger(r, 'p1');
