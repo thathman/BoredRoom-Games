@@ -6,7 +6,7 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const gamesRoot = path.join(root, 'games');
 const dist = path.join(root, 'dist');
-const tag = process.env.RELEASE_TAG ?? 'v1.2.0.0';
+const tag = process.env.RELEASE_TAG ?? 'v1.7.0.0';
 const releaseVersion = tag.replace(/^v/, '');
 const privateKeyText = process.env.BOREDROOM_GAMES_SIGNING_KEY;
 if (!privateKeyText) throw new Error('BOREDROOM_GAMES_SIGNING_KEY is required');
