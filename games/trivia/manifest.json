@@ -4,7 +4,7 @@
   "name": "Money Trivia",
   "emoji": "💰",
   "description": "Fastest-finger into a 15-question hot-seat cash ladder. Host-funded prize; BoredRoom never collects or pays money.",
-  "version": "1.7.0.0",
+  "version": "1.7.0.1",
   "minPlayers": 2,
   "maxPlayers": 8,
   "capabilities": {

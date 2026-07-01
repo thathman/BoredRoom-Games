@@ -6,7 +6,7 @@ import test from 'node:test';
 import { MoneyTriviaRuntime, generateLadder } from '../../../runtime/games/money-trivia.js';
 
 const MANIFEST = {
-  id: 'trivia', name: 'Money Trivia', emoji: '💰', version: '1.7.0.0',
+  id: 'trivia', name: 'Money Trivia', emoji: '💰', version: '1.7.0.1',
   minPlayers: 2, maxPlayers: 8, capabilities: { bots: false, audience: true, hints: false, restore: true },
 };
 
@@ -184,6 +184,22 @@ test('Ask Host records a concealed host recommendation', () => {
   r.handleIntent('p1', { type: 'use_lifeline', lifeline: 'ask_host' }, false);
   r.handleIntent('host', { type: 'host_answer', optionIndex: 0, confidence: 70 }, true);
   assert.deepEqual(r.publicState().lastLifelineHint.recommendation, { optionIndex: 0, confidence: 70 });
+});
+
+test('completed lifeline advice is cleared when advancing to the next question', () => {
+  const r = make();
+  winFastestFinger(r, 'p1');
+  r.handleIntent('p1', { type: 'use_lifeline', lifeline: 'ask_host' }, false);
+  r.handleIntent('host', { type: 'host_answer', optionIndex: 0, confidence: 70 }, true);
+  assert.ok(r.publicState().lastLifelineHint);
+
+  const q = r.hotSeatQuestions[r.level];
+  r.handleIntent('p1', { type: 'select_answer', optionIndex: q.answer }, false);
+  r.handleIntent('p1', { type: 'lock_answer' }, false);
+  r.handleIntent('host', { type: 'reveal_answer' }, true);
+  r.handleIntent('host', { type: 'advance' }, true);
+
+  assert.equal(r.publicState().lastLifelineHint, null);
 });
 
 test('the correct answer never leaks before reveal in any projection', () => {

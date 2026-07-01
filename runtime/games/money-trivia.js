@@ -346,6 +346,7 @@ export class MoneyTriviaRuntime extends RuntimeBase {
     if (this.lockedOption != null || this.lifelineActive) return false;
     const q = this.hotSeatQuestions[this.level];
     if (!q) return false;
+    this.state.lastLifelineHint = null;
     this.lifelineState[l] = true;
 
     if (l === 'fifty_fifty') {
@@ -547,6 +548,7 @@ export class MoneyTriviaRuntime extends RuntimeBase {
     this.lockedOption = null;
     this.activeFifty = null;
     this.lifelineActive = null;
+    this.state.lastLifelineHint = null;
     if (this.level >= LADDER_LEVELS || !this.hotSeatQuestions[this.level]) {
       this.finishRun('top_prize', this.topPrize);
       return true;
