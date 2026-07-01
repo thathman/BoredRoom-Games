@@ -174,7 +174,8 @@ test('Ask One Player records the chosen helper recommendation', () => {
   assert.equal(r.privateState('p2').isHelper, true);
   assert.equal(r.handleIntent('p3', { type: 'friend_answer', optionIndex: 0, confidence: 90 }, false), false); // only helper
   r.handleIntent('p2', { type: 'friend_answer', optionIndex: 2, confidence: 80 }, false);
-  assert.deepEqual(r.publicState().lifeline.recommendation, { optionIndex: 2, confidence: 80 });
+  // The lifeline closes on answer; the recommendation is preserved as the last hint.
+  assert.deepEqual(r.publicState().lastLifelineHint.recommendation, { optionIndex: 2, confidence: 80 });
 });
 
 test('Ask Host records a concealed host recommendation', () => {
@@ -182,7 +183,7 @@ test('Ask Host records a concealed host recommendation', () => {
   winFastestFinger(r, 'p1');
   r.handleIntent('p1', { type: 'use_lifeline', lifeline: 'ask_host' }, false);
   r.handleIntent('host', { type: 'host_answer', optionIndex: 0, confidence: 70 }, true);
-  assert.deepEqual(r.publicState().lifeline.recommendation, { optionIndex: 0, confidence: 70 });
+  assert.deepEqual(r.publicState().lastLifelineHint.recommendation, { optionIndex: 0, confidence: 70 });
 });
 
 test('the correct answer never leaks before reveal in any projection', () => {
@@ -244,6 +245,68 @@ test('audience votes are rejected outside an Ask the Room lifeline', () => {
   const r = make();
   winFastestFinger(r, 'p1');
   assert.equal(r.handleIntent('p2', { type: 'audience_vote', optionIndex: 0 }, false), false);
+});
+
+test('fastest finger resolves at its deadline using only received submissions', () => {
+  const r = make({ fastestFingerSeconds: 10 });
+  r._now += 100; r.handleIntent('p2', { type: 'fastest_finger_submit', order: r.ffQuestion.correctOrder }, false);
+  // p1 and p3 never submit. Advance past the 10s deadline and tick.
+  r._now = r.state.fastestFinger.deadline + 1;
+  assert.equal(r.resolveDueDeadlines(), true);
+  assert.equal(r.state.phase, 'hot_seat');
+  assert.equal(r.contestantId, 'p2');
+});
+
+test('the four-second auto-reveal fires at its deadline', () => {
+  const r = make();
+  winFastestFinger(r, 'p1');
+  const q = r.hotSeatQuestions[r.level];
+  r.handleIntent('p1', { type: 'select_answer', optionIndex: q.answer }, false);
+  r.handleIntent('p1', { type: 'lock_answer' }, false);
+  assert.equal(r.state.reveal.pending, true);
+  r._now = r.state.reveal.autoRevealDeadline + 1;
+  assert.equal(r.resolveDueDeadlines(), true);
+  assert.equal(r.state.reveal.pending, false);
+  assert.equal(r.state.reveal.correctIndex, q.answer);
+});
+
+test('question timeout fires at its deadline (walk away by default)', () => {
+  const r = make({ questionSeconds: 30 });
+  winFastestFinger(r, 'p1');
+  answerCorrect(r); // bank ₦100
+  assert.ok(r.state.questionDeadline);
+  r._now = r.state.questionDeadline + 1;
+  assert.equal(r.resolveDueDeadlines(), true);
+  assert.equal(r.state.phase, 'finished');
+  assert.equal(r.result.outcome, 'timeout_walk');
+});
+
+test('a lifeline pauses the question timer and resumes with at least 15s', () => {
+  const r = make({ questionSeconds: 30 });
+  winFastestFinger(r, 'p1');
+  // 30s timer running; 3s pass, then Ask the Room (15s) pauses it.
+  r._now += 27000; // 3s remaining on the question timer
+  r.handleIntent('p1', { type: 'use_lifeline', lifeline: 'ask_room' }, false);
+  assert.equal(r.state.questionDeadline, null); // paused
+  assert.equal(r.state.questionRemainingMs, 3000);
+  // Ask the Room expires after 15s → timer resumes with max(3s,15s)=15s.
+  r._now = r.lifelineActive.deadline + 1;
+  r.resolveDueDeadlines();
+  assert.equal(r.lifelineActive, null);
+  assert.ok(r.state.questionDeadline - r._now >= 15000 - 5);
+  assert.equal(r.state.lastLifelineHint.type, 'ask_room');
+});
+
+test('nextDeadline reflects the earliest active deadline, and pause/resume shifts it', () => {
+  const r = make({ fastestFingerSeconds: 10 });
+  const ffDeadline = r.nextDeadline();
+  assert.equal(ffDeadline, r.state.fastestFinger.deadline);
+  r._now += 4000;
+  r.pauseTimers();
+  r._now += 9000; // 9s paused
+  r.resumeTimers();
+  // Deadline pushed out by ~9s so the paused time doesn't count against players.
+  assert.ok(r.nextDeadline() > ffDeadline + 8000);
 });
 
 test('snapshot/restore preserves an in-progress hot seat', () => {

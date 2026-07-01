@@ -295,6 +295,9 @@ export class MoneyTriviaRuntime extends RuntimeBase {
     if (isHost && type === 'advance') return this.advance();
     if (isHost && type === 'host_answer') return this.recordHostAnswer(intent);
     if (isHost && type === 'resolve_timeout') return this.resolveTimeout();
+    // System/host deadline tick — resolves whatever is due (FF expiry, auto-reveal, timeout,
+    // lifeline expiry). The server schedules this at nextDeadline(); also safe to call directly.
+    if (isHost && type === 'resolve_deadline') return this.resolveDueDeadlines();
 
     if (this.state.phase !== 'hot_seat') {
       // Audience votes are only meaningful during an ask_room lifeline (handled below).
@@ -350,6 +353,8 @@ export class MoneyTriviaRuntime extends RuntimeBase {
       this.refreshHotSeat();
       return true;
     }
+    // The three interactive lifelines pause the question timer for their duration.
+    this.pauseQuestionTimer();
     if (l === 'ask_room') {
       this.lifelineActive = { type: 'ask_room', deadline: this.nowMs() + 15000, votes: new Map() };
       this.state.lastAction = 'Ask the Room — audience, vote now!';
@@ -392,8 +397,8 @@ export class MoneyTriviaRuntime extends RuntimeBase {
     if (!Number.isInteger(idx) || idx < 0 || idx > 3) return false;
     const confidence = Math.min(100, Math.max(0, Math.trunc(Number(intent?.confidence) || 50)));
     this.lifelineActive.recommendation = { optionIndex: idx, confidence };
-    this.lifelineActive.deadline = this.nowMs(); // resolved
-    this.refreshHotSeat();
+    // The lifeline period ends as soon as the helper answers — close it and resume the timer.
+    this.closeLifeline();
     return true;
   }
 
@@ -403,9 +408,95 @@ export class MoneyTriviaRuntime extends RuntimeBase {
     if (!Number.isInteger(idx) || idx < 0 || idx > 3) return false;
     const confidence = Math.min(100, Math.max(0, Math.trunc(Number(intent?.confidence) || 50)));
     this.lifelineActive.recommendation = { optionIndex: idx, confidence };
-    this.lifelineActive.deadline = this.nowMs();
-    this.refreshHotSeat();
+    this.closeLifeline();
     return true;
+  }
+
+  // ── Question-timer pause/resume + lifeline close ────────────────────────────
+  pauseQuestionTimer() {
+    if (this.state?.questionDeadline) {
+      this.state.questionRemainingMs = Math.max(0, this.state.questionDeadline - this.nowMs());
+      this.state.questionDeadline = null;
+      this.state.questionDeadlineAt = null;
+    }
+  }
+
+  // End the active lifeline: preserve its hint so the contestant can still see it, then resume the
+  // question timer with the remaining time, guaranteed at least 15 seconds.
+  closeLifeline() {
+    const la = this.lifelineActive;
+    if (la) {
+      if (la.type === 'ask_room') {
+        const total = la.votes.size;
+        const tally = [0, 0, 0, 0];
+        for (const idx of la.votes.values()) tally[idx] += 1;
+        this.state.lastLifelineHint = { type: 'ask_room', percentages: tally.map((n) => (total ? Math.round((n / total) * 100) : 0)), votesCast: total };
+      } else if (la.recommendation) {
+        this.state.lastLifelineHint = { type: la.type, recommendation: la.recommendation, helperName: la.helperId ? this.playerName(la.helperId) : undefined };
+      }
+      this.lifelineActive = null;
+    }
+    // Resume the question timer with >= 15s remaining if a timer is configured.
+    if (this.state.questionRemainingMs != null) {
+      const resume = Math.max(this.state.questionRemainingMs, 15000);
+      this.state.questionDeadline = this.nowMs() + resume;
+      this.state.questionDeadlineAt = this.state.questionDeadline;
+      this.state.questionRemainingMs = null;
+    }
+    this.refreshHotSeat();
+  }
+
+  // Earliest active runtime deadline (epoch ms) the server should schedule a resolver for.
+  nextDeadline() {
+    if (!this.state) return null;
+    const candidates = [];
+    if (this.state.phase === 'fastest_finger') candidates.push(this.state.fastestFinger?.deadline);
+    if (this.state.phase === 'hot_seat') {
+      if (this.lifelineActive) candidates.push(this.lifelineActive.deadline);
+      else {
+        if (this.state.reveal?.pending) candidates.push(this.state.reveal.autoRevealDeadline);
+        if (this.state.questionDeadline) candidates.push(this.state.questionDeadline);
+      }
+    }
+    const active = candidates.filter((d) => typeof d === 'number');
+    return active.length ? Math.min(...active) : null;
+  }
+
+  // Resolve whatever deadline(s) are due at `now`. Returns true if state changed. Idempotent.
+  resolveDueDeadlines(now = this.nowMs()) {
+    if (!this.state || this.state.phase === 'finished') return false;
+    let changed = false;
+    if (this.state.phase === 'fastest_finger' && this.state.fastestFinger?.deadline && now >= this.state.fastestFinger.deadline) {
+      this.resolveFastestFinger(); // resolve with whatever submissions were received
+      return true;
+    }
+    if (this.state.phase === 'hot_seat') {
+      if (this.lifelineActive && now >= this.lifelineActive.deadline) { this.closeLifeline(); changed = true; }
+      else if (this.state.reveal?.pending && this.state.reveal.autoRevealDeadline && now >= this.state.reveal.autoRevealDeadline && this.lockedOption != null) {
+        this.revealAnswer(); changed = true;
+      } else if (this.state.questionDeadline && now >= this.state.questionDeadline && this.lockedOption == null && !this.lifelineActive) {
+        this.resolveTimeout(); changed = true;
+      }
+    }
+    return changed;
+  }
+
+  // Game-level pause/resume (player disconnect): freeze and shift every deadline so nothing fires
+  // while paused. Lifeline question-timer pause is separate (handled above).
+  pauseTimers(now = this.nowMs()) {
+    if (this.state?.pausedAt) return;
+    if (this.state) this.state.pausedAt = now;
+  }
+
+  resumeTimers(now = this.nowMs()) {
+    if (!this.state?.pausedAt) return;
+    const delta = now - this.state.pausedAt;
+    const shift = (v) => (typeof v === 'number' ? v + delta : v);
+    if (this.state.fastestFinger?.deadline) this.state.fastestFinger.deadline = shift(this.state.fastestFinger.deadline);
+    if (this.state.questionDeadline) { this.state.questionDeadline = shift(this.state.questionDeadline); this.state.questionDeadlineAt = this.state.questionDeadline; }
+    if (this.state.reveal?.autoRevealDeadline) this.state.reveal.autoRevealDeadline = shift(this.state.reveal.autoRevealDeadline);
+    if (this.lifelineActive) this.lifelineActive.deadline = shift(this.lifelineActive.deadline);
+    this.state.pausedAt = null;
   }
 
   refreshHotSeat() {
