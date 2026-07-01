@@ -94,9 +94,12 @@ export class MoneyTriviaRuntime extends RuntimeBase {
       && q.options.length === 4 && Number.isInteger(q.answer) && q.answer >= 0 && q.answer < 4);
     // Shuffle each hot-seat question's options so the correct index isn't a fixed position.
     this.hotSeatQuestions = valid.slice(0, LADDER_LEVELS).map((q) => this.shuffleOptions(q));
-    // Fastest-finger questions keep their option order; a separate `order` array (default [0,1,2,3])
-    // gives the correct sequence players must restore. Any leftover questions feed the FF pool.
-    this.fastestFingerPool = valid.slice(LADDER_LEVELS).map((q) => this.ffQuestionFrom(q));
+    // Dedicated Fastest Finger ordering questions (options authored in correct order, or an
+    // explicit `order`). Fall back to leftover hot-seat questions only if none were supplied.
+    const ffSupplied = Array.isArray(s.fastestFingerQuestions) ? s.fastestFingerQuestions : [];
+    const ffValid = ffSupplied.filter((q) => q && typeof q.prompt === 'string' && Array.isArray(q.options) && q.options.length === 4);
+    const ffSource = ffValid.length ? ffValid : valid.slice(LADDER_LEVELS);
+    this.fastestFingerPool = ffSource.map((q) => this.ffQuestionFrom(q));
     if (this.fastestFingerPool.length === 0 && valid.length) this.fastestFingerPool = [this.ffQuestionFrom(valid[0])];
 
     this.lifelineState = { fifty_fifty: false, ask_room: false, ask_player: false, ask_host: false };
